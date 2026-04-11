@@ -8,7 +8,6 @@ export function FinTrackLogo({ className }: FinTrackLogoProps) {
   return (
     <div className={cn('flex items-center gap-3', className)}>
       <div className="relative flex size-11 items-center justify-center overflow-hidden rounded-2xl border border-emerald-400/30 bg-linear-to-br from-emerald-400 via-emerald-500 to-teal-700 text-white shadow-lg shadow-emerald-500/20">
-        <div className="absolute inset-1 rounded-[14px] border border-white/20" />
         <div className="relative flex items-end gap-1">
           <span className="h-3 w-1.5 rounded-full bg-white/70" />
           <span className="h-5 w-1.5 rounded-full bg-white/90" />
