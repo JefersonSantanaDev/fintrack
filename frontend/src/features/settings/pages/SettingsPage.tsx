@@ -18,16 +18,11 @@ const sections = [
     description: 'Reservado para vencimentos, estouro de orcamento e recorrencias.',
     status: 'Planejado',
   },
-  {
-    title: 'Importacao',
-    description: 'Espaco para CSV, OFX e conciliacao de extratos em versoes futuras.',
-    status: 'Planejado',
-  },
 ]
 
 export function SettingsPage() {
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="grid gap-4 lg:grid-cols-2">
       {sections.map(section => (
         <Card key={section.title} className="rounded-[28px] bg-card/85">
           <CardHeader>

@@ -90,7 +90,12 @@ export function DashboardPage() {
                 <CardTitle className="text-2xl">{formatCurrency(metric.value)}</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <Badge variant={metricBadge[metric.tone]}>{metric.change}</Badge>
+                <Badge
+                  variant={metricBadge[metric.tone]}
+                  className="w-full justify-start whitespace-normal px-3 py-1 text-left leading-relaxed"
+                >
+                  {metric.change}
+                </Badge>
               </CardContent>
             </Card>
           )

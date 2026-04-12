@@ -10,7 +10,7 @@ import type {
 export const summaryMetrics: SummaryMetric[] = [
   {
     id: 'balance',
-    label: 'Saldo consolidado',
+    label: 'Total guardado',
     value: 28450,
     change: '+8,2% comparado a marco',
     tone: 'success',

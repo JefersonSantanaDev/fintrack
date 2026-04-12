@@ -36,7 +36,7 @@ const routeMeta = [
   {
     match: appPaths.dashboard,
     title: 'Visao geral da familia',
-    description: 'Saldo, orcamento e progresso financeiro em um unico painel.',
+    description: 'Total guardado, orcamento e progresso financeiro em um unico painel.',
   },
   {
     match: appPaths.transactions,
@@ -137,9 +137,6 @@ export function AppShell() {
               <Badge variant="secondary" className="max-w-max">
                 {user?.name ?? 'Conta'}
               </Badge>
-              <Button variant="outline" className="justify-start sm:justify-center">
-                Importar extrato
-              </Button>
               <Button className="justify-start bg-primary sm:justify-center">
                 Nova despesa
               </Button>
