@@ -3,3 +3,12 @@ node_modules
 .env
 
 /generated/prisma
+
+# AI Agents and Contexts
+AGENTS.md
+CLAUDE.md
+skills-lock.json
+.agents/
+.agent/
+.claude/
+.qwen/

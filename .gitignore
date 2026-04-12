@@ -1,2 +1,11 @@
 .DS_Store
 .vscode/
+
+# AI Agents and Contexts
+AGENTS.md
+CLAUDE.md
+skills-lock.json
+.agents/
+.agent/
+.claude/
+.qwen/
