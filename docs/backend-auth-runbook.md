@@ -2,6 +2,10 @@
 
 Guia pratico para subir o backend local, aplicar migrations e validar o fluxo real de autenticacao.
 
+Para rodar stack completa em Docker (`frontend + backend + db`), use:
+
+- `docs/docker-fullstack.md`
+
 ## 1) Subir PostgreSQL local (Docker)
 
 No diretorio `backend/`:
