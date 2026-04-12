@@ -2,7 +2,17 @@ import { cn } from '@/shared/lib/utils'
 
 interface FinTrackLogoProps {
   className?: string
-  variant?: 'full' | 'icon'
+  variant?: 'full' | 'icon' | 'stripes'
+}
+
+function LogoBars({ className }: { className?: string }) {
+  return (
+    <div className={cn('relative flex h-7 w-7 items-end justify-center gap-1', className)}>
+      <span className="h-3 w-1.5 rounded-full bg-emerald-500/80" />
+      <span className="h-5.5 w-1.5 rounded-full bg-emerald-500" />
+      <span className="h-7 w-1.5 rounded-full bg-amber-300" />
+    </div>
+  )
 }
 
 function LogoMark({ className }: { className?: string }) {
@@ -14,11 +24,7 @@ function LogoMark({ className }: { className?: string }) {
       )}
     >
       <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-white/15 via-transparent to-black/10" />
-      <div className="relative flex h-7 w-7 items-end justify-center gap-1">
-        <span className="h-3 w-1.5 rounded-full bg-emerald-100/80" />
-        <span className="h-5.5 w-1.5 rounded-full bg-emerald-50/95" />
-        <span className="h-7 w-1.5 rounded-full bg-amber-200" />
-      </div>
+      <LogoBars className="[&_span:nth-child(1)]:bg-emerald-100/80 [&_span:nth-child(2)]:bg-emerald-50/95 [&_span:nth-child(3)]:bg-amber-200" />
     </div>
   )
 }
@@ -26,6 +32,14 @@ function LogoMark({ className }: { className?: string }) {
 export function FinTrackLogo({ className, variant = 'full' }: FinTrackLogoProps) {
   if (variant === 'icon') {
     return <LogoMark className={className} />
+  }
+
+  if (variant === 'stripes') {
+    return (
+      <div className={cn('relative flex size-11 items-center justify-center', className)}>
+        <LogoBars />
+      </div>
+    )
   }
 
   return (

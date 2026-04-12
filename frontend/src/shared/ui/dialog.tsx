@@ -4,6 +4,7 @@ import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"
 
+import { FinTrackLogo } from "@/shared/branding/FinTrackLogo"
 import { cn } from "@/shared/lib/utils"
 
 function Dialog({
@@ -76,13 +77,32 @@ function DialogContent({
   )
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+function DialogHeader({
+  className,
+  showBrand = true,
+  children,
+  ...props
+}: React.ComponentProps<"div"> & { showBrand?: boolean }) {
+  const childArray = React.Children.toArray(children)
+  const titleChild = childArray.find(
+    child => React.isValidElement(child) && child.type === DialogTitle
+  )
+  const remainingChildren = childArray.filter(child => child !== titleChild)
+
   return (
     <div
       data-slot="dialog-header"
       className={cn("relative flex flex-col gap-2 text-center sm:text-start", className)}
       {...props}
-    />
+    >
+      {showBrand || titleChild ? (
+        <div className="flex items-center gap-3">
+          {showBrand ? <FinTrackLogo variant="stripes" className="size-9 shrink-0" /> : null}
+          {titleChild}
+        </div>
+      ) : null}
+      {remainingChildren}
+    </div>
   )
 }
 

@@ -37,7 +37,6 @@ import {
   TableRow,
 } from '@/shared/ui/table'
 import { DatePicker } from '@/shared/ui/date-picker'
-import { FinTrackLogo } from '@/shared/branding/FinTrackLogo'
 import { accounts, formatCurrency, transactions } from '@/features/finance'
 import type { Transaction } from '@/features/finance/types/finance.types'
 
@@ -162,10 +161,7 @@ export function TransactionsPage() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl border-emerald-500/25 bg-linear-to-b from-emerald-500/[0.05] via-background/98 to-background p-0">
                 <DialogHeader className="border-b border-emerald-500/12 px-6 py-5">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <FinTrackLogo variant="icon" className="size-10 shrink-0" />
-                    <DialogTitle className="text-2xl">Novo lancamento</DialogTitle>
-                  </div>
+                  <DialogTitle className="text-2xl">Novo lancamento</DialogTitle>
                   <DialogDescription>
                     Registre receitas, despesas e transferencias da familia em um unico fluxo.
                   </DialogDescription>
