@@ -30,6 +30,12 @@ O `fintrack` deve permitir:
 - Banco: `PostgreSQL`
 - Auth: `JWT` com refresh token
 
+### Estrategia de refresh token (decisao atual)
+
+- MVP inicial: usar refresh token no `localStorage` (opcao 2) para acelerar entrega do login.
+- Evolucao planejada: migrar para refresh token em cookie `httpOnly` (opcao 1) para maior seguranca.
+- Na migracao: ajustar `sameSite`, `secure`, `CORS` com `credentials` e estrategia de `CSRF`.
+
 ### Por que essa stack
 
 - `NestJS` ajuda a organizar o backend por modulos
@@ -243,6 +249,7 @@ frontend/src/
 - rota protegida no frontend
 - contexto ou store de autenticacao real
 - tela de perfil
+- migrar refresh token de `localStorage` para cookie `httpOnly` em fase de endurecimento
 
 ### Fase 3 - Nucleo familiar
 
