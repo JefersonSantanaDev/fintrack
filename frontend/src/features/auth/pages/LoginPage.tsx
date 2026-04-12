@@ -39,8 +39,6 @@ export function LoginPage() {
 
   const fromState = location.state as FromState | null
   const nextPath = fromState?.from ?? defaultAppPath
-  const demoEmail = 'jeferson@fintrack.app'
-  const demoPassword = 'senha123'
   const emailRequiredError = touched.email && !email.trim() ? 'Preencha este campo.' : null
   const passwordRequiredError = touched.password && !password.trim() ? 'Preencha este campo.' : null
 
@@ -169,8 +167,7 @@ export function LoginPage() {
               </div>
 
               <div className="rounded-2xl border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
-                Demo rapida: <span className="font-medium">{demoEmail}</span> /{' '}
-                <span className="font-medium">{demoPassword}</span>
+                Acesse com sua conta do FinTrack ou crie um novo cadastro.
               </div>
 
               <form className="space-y-5" onSubmit={handleSubmit} noValidate>

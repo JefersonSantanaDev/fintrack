@@ -4,15 +4,6 @@ export interface AuthUser {
   email: string
 }
 
-interface StoredUser extends AuthUser {
-  password: string
-  createdAt: string
-}
-
-interface SessionPayload {
-  userId: string
-}
-
 export interface LoginInput {
   email: string
   password: string
@@ -24,162 +15,198 @@ export interface SignUpInput {
   password: string
 }
 
-const USERS_STORAGE_KEY = 'fintrack-auth-users'
-const SESSION_STORAGE_KEY = 'fintrack-auth-session'
-
-const seededUser: StoredUser = {
-  id: 'seed-user-1',
-  name: 'Jeferson',
-  email: 'jeferson@fintrack.app',
-  password: 'senha123',
-  createdAt: '2026-01-01T00:00:00.000Z',
+interface AuthSuccessPayload {
+  user: AuthUser
+  accessToken: string
+  refreshToken: string
 }
+
+interface ApiErrorPayload {
+  message?: string | string[]
+}
+
+const ACCESS_TOKEN_STORAGE_KEY = 'fintrack-auth-access-token'
+const REFRESH_TOKEN_STORAGE_KEY = 'fintrack-auth-refresh-token'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api'
 
 function isBrowser() {
   return typeof window !== 'undefined'
-}
-
-function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
 }
 
-function toAuthUser(user: StoredUser): AuthUser {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-  }
-}
-
-function readUsers(): StoredUser[] {
+function readAccessToken() {
   if (!isBrowser()) {
-    return [seededUser]
+    return null
   }
 
-  const raw = window.localStorage.getItem(USERS_STORAGE_KEY)
-  if (!raw) {
-    return []
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as StoredUser[]
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
+  return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)
 }
 
-function saveUsers(users: StoredUser[]) {
+function readRefreshToken() {
+  if (!isBrowser()) {
+    return null
+  }
+
+  return window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+}
+
+function saveTokens(tokens: { accessToken: string; refreshToken: string }) {
   if (!isBrowser()) {
     return
   }
 
-  window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
+  window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, tokens.accessToken)
+  window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, tokens.refreshToken)
 }
 
-function readSession(): SessionPayload | null {
+function clearTokens() {
   if (!isBrowser()) {
-    return null
+    return
   }
 
-  const raw = window.localStorage.getItem(SESSION_STORAGE_KEY)
-  if (!raw) {
-    return null
-  }
+  window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
+  window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+}
 
+async function parseJsonSafe(response: Response) {
   try {
-    const parsed = JSON.parse(raw) as SessionPayload
-    if (!parsed?.userId) {
-      return null
-    }
-
-    return parsed
+    return (await response.json()) as unknown
   } catch {
     return null
   }
 }
 
-function saveSession(payload: SessionPayload | null) {
-  if (!isBrowser()) {
-    return
+function resolveErrorMessage(payload: unknown, fallback: string) {
+  const data = payload as ApiErrorPayload | null
+
+  if (!data?.message) {
+    return fallback
   }
 
-  if (!payload) {
-    window.localStorage.removeItem(SESSION_STORAGE_KEY)
-    return
+  if (Array.isArray(data.message)) {
+    return data.message.join(', ')
   }
 
-  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload))
+  return data.message
 }
 
-function ensureSeededUsers() {
-  const existingUsers = readUsers()
-  if (existingUsers.length > 0) {
-    return existingUsers
+async function requestApi<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      'content-type': 'application/json',
+      ...(init?.headers ?? {}),
+    },
+    ...init,
+  })
+
+  const payload = await parseJsonSafe(response)
+
+  if (!response.ok) {
+    throw new Error(resolveErrorMessage(payload, 'Nao foi possivel concluir a operacao.'))
   }
 
-  saveUsers([seededUser])
-  return [seededUser]
+  return payload as T
 }
 
-function generateUserId() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID()
+async function refreshTokens() {
+  const refreshToken = readRefreshToken()
+
+  if (!refreshToken) {
+    return null
   }
 
-  return `user-${Date.now()}`
+  try {
+    const payload = await requestApi<AuthSuccessPayload>('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    })
+
+    saveTokens({
+      accessToken: payload.accessToken,
+      refreshToken: payload.refreshToken,
+    })
+
+    return payload
+  } catch {
+    clearTokens()
+    return null
+  }
+}
+
+async function meWithAccessToken(accessToken: string) {
+  const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (response.status === 401) {
+    return null
+  }
+
+  const payload = await parseJsonSafe(response)
+
+  if (!response.ok) {
+    throw new Error(resolveErrorMessage(payload, 'Nao foi possivel validar a sessao.'))
+  }
+
+  const data = payload as { user: AuthUser }
+  return data.user ?? null
 }
 
 export async function getSessionUser() {
-  await sleep(200)
+  const accessToken = readAccessToken()
 
-  const users = ensureSeededUsers()
-  const session = readSession()
-
-  if (!session) {
+  if (!accessToken) {
     return null
   }
 
-  const activeUser = users.find(user => user.id === session.userId)
-  if (!activeUser) {
-    saveSession(null)
+  try {
+    const currentUser = await meWithAccessToken(accessToken)
+    if (currentUser) {
+      return currentUser
+    }
+  } catch {
+    clearTokens()
     return null
   }
 
-  return toAuthUser(activeUser)
+  const refreshed = await refreshTokens()
+  if (!refreshed) {
+    return null
+  }
+
+  return refreshed.user
 }
 
 export async function loginWithEmailAndPassword(input: LoginInput) {
-  await sleep(250)
-
   const email = normalizeEmail(input.email)
-  const password = input.password
+  const password = input.password.trim()
 
   if (!email || !password) {
     throw new Error('Informe email e senha para entrar.')
   }
 
-  const users = ensureSeededUsers()
-  const foundUser = users.find(user => user.email === email)
+  const payload = await requestApi<AuthSuccessPayload>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  })
 
-  if (!foundUser || foundUser.password !== password) {
-    throw new Error('Email ou senha invalidos.')
-  }
+  saveTokens({
+    accessToken: payload.accessToken,
+    refreshToken: payload.refreshToken,
+  })
 
-  saveSession({ userId: foundUser.id })
-  return toAuthUser(foundUser)
+  return payload.user
 }
 
 export async function signUpWithEmailAndPassword(input: SignUpInput) {
-  await sleep(300)
-
   const name = input.name.trim()
   const email = normalizeEmail(input.email)
-  const password = input.password
+  const password = input.password.trim()
 
   if (name.length < 2) {
     throw new Error('Informe um nome valido.')
@@ -193,29 +220,32 @@ export async function signUpWithEmailAndPassword(input: SignUpInput) {
     throw new Error('A senha deve ter pelo menos 6 caracteres.')
   }
 
-  const users = ensureSeededUsers()
-  const emailAlreadyInUse = users.some(user => user.email === email)
+  const payload = await requestApi<AuthSuccessPayload>('/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify({ name, email, password }),
+  })
 
-  if (emailAlreadyInUse) {
-    throw new Error('Este email ja esta cadastrado.')
-  }
+  saveTokens({
+    accessToken: payload.accessToken,
+    refreshToken: payload.refreshToken,
+  })
 
-  const newUser: StoredUser = {
-    id: generateUserId(),
-    name,
-    email,
-    password,
-    createdAt: new Date().toISOString(),
-  }
-
-  const nextUsers = [...users, newUser]
-  saveUsers(nextUsers)
-  saveSession({ userId: newUser.id })
-
-  return toAuthUser(newUser)
+  return payload.user
 }
 
 export async function logoutSession() {
-  await sleep(120)
-  saveSession(null)
+  const refreshToken = readRefreshToken()
+
+  if (refreshToken) {
+    try {
+      await requestApi<{ success: boolean }>('/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
+      })
+    } catch {
+      // Logout deve sempre limpar estado local, mesmo em erro de rede.
+    }
+  }
+
+  clearTokens()
 }

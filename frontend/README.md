@@ -41,6 +41,14 @@ npm install
 npm run dev
 ```
 
+## Variaveis de ambiente
+
+Crie um arquivo `.env` com:
+
+```bash
+VITE_API_URL=http://localhost:3000/api
+```
+
 ## Build
 
 ```bash
