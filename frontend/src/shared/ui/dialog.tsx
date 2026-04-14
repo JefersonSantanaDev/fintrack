@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"
@@ -39,7 +37,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-[2px]",
+        "fixed inset-0 z-50 bg-black/72 backdrop-blur-[1px] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className
       )}
       {...props}
@@ -60,14 +58,14 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-background/98 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-hidden rounded-[28px] border border-emerald-500/18 p-6 shadow-[0_30px_90px_-38px_rgba(5,150,105,0.55)] duration-200 outline-none before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-16 before:bg-linear-to-b before:from-emerald-500/8 before:to-transparent sm:max-w-lg",
+          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-hidden rounded-lg border border-border bg-card p-6 shadow-[var(--shadow-level-2)] outline-none duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
           className
         )}
         {...props}
       >
         {children}
         {showClose && (
-          <DialogPrimitive.Close className="ring-offset-background focus:ring-ring absolute top-4 end-4 z-10 rounded-full border border-emerald-500/20 bg-background/85 p-1.5 text-muted-foreground/80 opacity-90 shadow-sm transition-colors hover:border-emerald-500/35 hover:bg-muted hover:text-foreground focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+          <DialogPrimitive.Close className="ring-offset-background focus:ring-ring absolute top-4 end-4 z-10 rounded-sm border border-[var(--border-olive)] bg-card p-1.5 text-muted-foreground opacity-90 shadow-[var(--shadow-level-1)] transition-colors hover:bg-accent hover:text-foreground focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
             <XIcon />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>

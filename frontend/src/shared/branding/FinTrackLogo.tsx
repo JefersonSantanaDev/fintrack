@@ -8,9 +8,9 @@ interface FinTrackLogoProps {
 function LogoBars({ className }: { className?: string }) {
   return (
     <div className={cn('relative flex h-7 w-7 items-end justify-center gap-1', className)}>
-      <span className="h-3 w-1.5 rounded-full bg-emerald-500/80" />
-      <span className="h-5.5 w-1.5 rounded-full bg-emerald-500" />
-      <span className="h-7 w-1.5 rounded-full bg-amber-300" />
+      <span className="h-3 w-1.5 rounded-full bg-[var(--forest-green)]" />
+      <span className="h-5.5 w-1.5 rounded-full bg-[var(--pale-yellow)]" />
+      <span className="h-7 w-1.5 rounded-full bg-primary" />
     </div>
   )
 }
@@ -19,12 +19,12 @@ function LogoMark({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'relative flex size-11 items-center justify-center overflow-hidden rounded-[18px] bg-linear-to-br from-emerald-400 via-emerald-500 to-teal-700 text-white shadow-[0_14px_28px_-16px_rgba(16,185,129,0.8)]',
+        'relative flex size-11 items-center justify-center overflow-hidden rounded-lg border border-border bg-card text-foreground shadow-[var(--shadow-level-1)]',
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-white/15 via-transparent to-black/10" />
-      <LogoBars className="[&_span:nth-child(1)]:bg-emerald-100/80 [&_span:nth-child(2)]:bg-emerald-50/95 [&_span:nth-child(3)]:bg-amber-200" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-2 border-b border-[var(--charcoal-deep)] bg-primary/20" />
+      <LogoBars />
     </div>
   )
 }
@@ -47,7 +47,7 @@ export function FinTrackLogo({ className, variant = 'full' }: FinTrackLogoProps)
       <LogoMark />
       <div className="space-y-0.5">
         <p className="text-lg font-semibold tracking-tight text-foreground">FinTrack</p>
-        <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Familia e planejamento
         </p>
       </div>

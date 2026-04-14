@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   ArrowLeftRight,
   ChevronRight,
   LayoutDashboard,
-  Moon,
   PiggyBank,
   Settings,
-  Sun,
   Target,
   Users,
   Wallet,
@@ -41,7 +39,7 @@ const routeMeta = [
   {
     match: appPaths.transactions,
     title: 'Fluxo de caixa',
-    description: 'Lançamentos recentes com filtros prontos para o MVP.',
+    description: 'Lancamentos recentes com filtros prontos para o MVP.',
   },
   {
     match: appPaths.accounts,
@@ -77,19 +75,11 @@ function pageMeta(pathname: string) {
 export function AppShell() {
   const location = useLocation()
   const { user, logout, isSubmitting } = useAuth()
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window === 'undefined') {
-      return false
-    }
-
-    return window.localStorage.getItem('fintrack-theme') === 'dark'
-  })
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', 'green')
-    document.documentElement.classList.toggle('dark', isDark)
-    window.localStorage.setItem('fintrack-theme', isDark ? 'dark' : 'light')
-  }, [isDark])
+    document.documentElement.setAttribute('data-theme', 'clickhouse')
+    document.documentElement.classList.remove('dark')
+  }, [])
 
   const currentMonth = useMemo(() => {
     return new Intl.DateTimeFormat('pt-BR', {
@@ -107,24 +97,26 @@ export function AppShell() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-90" />
-        <div className="absolute left-[-8%] top-[-12%] h-80 w-80 rounded-full bg-emerald-500/12 blur-3xl" />
-        <div className="absolute bottom-[-14%] right-[-6%] h-96 w-96 rounded-full bg-amber-400/12 blur-3xl" />
+        <div className="absolute inset-0 bg-grid-pattern opacity-70" />
+        <div className="absolute inset-x-0 top-0 h-px bg-primary/40" />
       </div>
 
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <header className="rounded-[28px] border bg-card/85 p-4 shadow-sm backdrop-blur">
+      <div className="mx-auto flex min-h-screen max-w-[2200px] flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <header className="rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-level-1)]">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 <FinTrackLogo />
-                <Badge variant="success">MVP familiar</Badge>
+                <Badge variant="secondary">MVP familiar</Badge>
                 <Badge variant="outline" className="capitalize">
                   {currentMonth}
                 </Badge>
               </div>
               <div className="space-y-2">
-                <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Painel operacional
+                </p>
+                <h1 className="text-3xl font-black leading-tight tracking-tight sm:text-5xl">
                   {meta.title}
                 </h1>
                 <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
@@ -134,12 +126,10 @@ export function AppShell() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Badge variant="secondary" className="max-w-max">
+              <Badge variant="outline" className="max-w-max">
                 {user?.name ?? 'Conta'}
               </Badge>
-              <Button className="justify-start bg-primary sm:justify-center">
-                Nova despesa
-              </Button>
+              <Button className="justify-start sm:justify-center">Nova despesa</Button>
               <Button
                 variant="ghost"
                 className="justify-start sm:justify-center"
@@ -148,20 +138,12 @@ export function AppShell() {
               >
                 {isSubmitting ? 'Saindo...' : 'Sair'}
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Alternar tema"
-                onClick={() => setIsDark(current => !current)}
-              >
-                {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-              </Button>
             </div>
           </div>
         </header>
 
         <div className="lg:hidden">
-          <div className="flex gap-2 overflow-x-auto rounded-[24px] border bg-card/85 p-2 shadow-sm backdrop-blur">
+          <div className="flex gap-2 overflow-x-auto rounded-lg border border-border bg-card p-2 shadow-[var(--shadow-level-1)]">
             {navigation.map(item => {
               const Icon = item.icon
 
@@ -171,10 +153,10 @@ export function AppShell() {
                   to={item.to}
                   className={({ isActive }) =>
                     cn(
-                      'flex min-w-max items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium transition-colors',
+                      'flex min-w-max items-center gap-2 rounded-sm px-4 py-2 text-sm font-semibold transition-colors',
                       isActive
                         ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                     )
                   }
                 >
@@ -188,10 +170,12 @@ export function AppShell() {
 
         <div className="grid flex-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="hidden lg:block">
-            <Card className="sticky top-4 rounded-[28px] border bg-card/85 py-4 shadow-sm backdrop-blur">
+            <Card className="sticky top-4 border-border py-4">
               <CardContent className="space-y-5 px-4">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-foreground">Navegacao</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Navegacao
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     Estrutura visual inicial do FinTrack para dashboard, contas e planejamento familiar.
                   </p>
@@ -209,10 +193,10 @@ export function AppShell() {
                         to={item.to}
                         className={({ isActive }) =>
                           cn(
-                            'flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-medium transition-colors',
+                            'flex items-center justify-between rounded-sm px-3 py-3 text-sm font-semibold transition-colors',
                             isActive
-                              ? 'bg-primary text-primary-foreground shadow-sm'
-                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                              ? 'bg-primary text-primary-foreground shadow-[var(--shadow-level-1)]'
+                              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                           )
                         }
                       >
@@ -228,10 +212,10 @@ export function AppShell() {
 
                 <Separator />
 
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/8 p-4">
-                  <p className="text-sm font-medium text-foreground">Sprint atual</p>
+                <div className="rounded-sm border border-primary/40 bg-primary/8 p-4">
+                  <p className="text-sm font-semibold text-foreground">Sprint atual</p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Estruturar o frontend do MVP, conectar autenticao e preparar a API de transacoes.
+                    Estruturar o frontend do MVP, conectar autenticacao e preparar a API de transacoes.
                   </p>
                 </div>
               </CardContent>

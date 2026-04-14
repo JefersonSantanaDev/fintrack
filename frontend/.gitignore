@@ -26,6 +26,7 @@ dist-ssr
 # AI Agents and Contexts
 CLAUDE.md
 AGENTS.md
+DESIGN.md
 skills-lock.json
 .agents/
 .agent/

@@ -16,7 +16,7 @@ export function GoalsPage() {
         const progress = Math.round((goal.currentAmount / goal.targetAmount) * 100)
 
         return (
-          <Card key={goal.id} className="rounded-[28px] bg-card/85">
+          <Card key={goal.id} className="rounded-lg bg-card">
             <CardHeader>
               <div className="flex items-center justify-between gap-3">
                 <CardTitle>{goal.name}</CardTitle>

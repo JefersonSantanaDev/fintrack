@@ -143,7 +143,7 @@ export function TransactionsPage() {
 
   return (
     <div className="space-y-4">
-      <Card className="rounded-[28px] bg-card/85">
+      <Card className="rounded-lg bg-card">
         <CardHeader className="gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle>Centro de lancamentos</CardTitle>
@@ -159,8 +159,8 @@ export function TransactionsPage() {
               <DialogTrigger asChild>
                 <Button>Novo lancamento</Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl border-emerald-500/25 bg-linear-to-b from-emerald-500/[0.05] via-background/98 to-background p-0">
-                <DialogHeader className="border-b border-emerald-500/12 px-6 py-5">
+              <DialogContent className="max-w-2xl p-0">
+                <DialogHeader className="border-b border-border px-6 py-5">
                   <DialogTitle className="text-2xl">Novo lancamento</DialogTitle>
                   <DialogDescription>
                     Registre receitas, despesas e transferencias da familia em um unico fluxo.
@@ -282,7 +282,7 @@ export function TransactionsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="border-t border-emerald-500/12 pt-5 sm:justify-between">
+                  <DialogFooter className="border-t border-border pt-5 sm:justify-between">
                     <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                       Cancelar
                     </Button>
@@ -295,7 +295,7 @@ export function TransactionsPage() {
         </CardHeader>
       </Card>
 
-      <Card className="rounded-[28px] bg-card/85">
+      <Card className="rounded-lg bg-card">
         <CardContent className="pt-6">
           <Table>
             <TableHeader>
@@ -323,7 +323,7 @@ export function TransactionsPage() {
                   <TableCell
                     className={
                       transaction.amount >= 0
-                        ? 'text-right font-medium text-emerald-600 dark:text-emerald-400'
+                        ? 'text-right font-medium text-primary'
                         : 'text-right font-medium text-foreground'
                     }
                   >

@@ -10,7 +10,7 @@ import {
 const sections = [
   {
     title: 'Tema e identidade',
-    description: 'O shell inicial ja suporta alternancia claro/escuro e tema verde como base.',
+    description: 'Design system oficial em preto puro, neon e bordas charcoal conforme DESIGN.md.',
     status: 'Ativo',
   },
   {
@@ -24,7 +24,7 @@ export function SettingsPage() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {sections.map(section => (
-        <Card key={section.title} className="rounded-[28px] bg-card/85">
+        <Card key={section.title} className="rounded-lg bg-card">
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
               <CardTitle>{section.title}</CardTitle>

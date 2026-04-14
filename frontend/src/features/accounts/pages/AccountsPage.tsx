@@ -109,7 +109,7 @@ export function AccountsPage() {
 
   return (
     <div className="space-y-4">
-      <Card className="rounded-[28px] bg-card/85">
+      <Card className="rounded-lg bg-card">
         <CardHeader className="gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle>Centro de contas</CardTitle>
@@ -117,9 +117,9 @@ export function AccountsPage() {
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="h-10 self-start rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
+              <Button className="h-10 self-start px-3 text-sm font-semibold">
                 <span className="flex items-center gap-1.5">
-                  <span className="grid size-4 place-items-center rounded-full border border-white/35 bg-white/15">
+                  <span className="grid size-4 place-items-center rounded-full border border-primary/40 bg-primary/15">
                     <Plus className="size-3" />
                   </span>
                   Nova conta
@@ -127,7 +127,7 @@ export function AccountsPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-xl p-0">
-              <DialogHeader className="border-b border-emerald-500/12 px-6 py-5">
+              <DialogHeader className="border-b border-border px-6 py-5">
                 <DialogTitle>Nova conta</DialogTitle>
                 <DialogDescription>
                   Informe os dados principais para acompanhar saldo e participação familiar.
@@ -211,7 +211,7 @@ export function AccountsPage() {
                   </div>
                 </div>
 
-                <DialogFooter className="border-t border-emerald-500/12 pt-5 sm:justify-between">
+                <DialogFooter className="border-t border-border pt-5 sm:justify-between">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancelar
                   </Button>
@@ -228,14 +228,14 @@ export function AccountsPage() {
           const Icon = accountIcons[account.type]
 
           return (
-            <Card key={account.id} className="rounded-[28px] bg-card/85">
+            <Card key={account.id} className="rounded-lg bg-card">
               <CardHeader>
                 <div className="flex items-center justify-between gap-4">
                   <div className="space-y-1">
                     <CardTitle>{account.name}</CardTitle>
                     <CardDescription>{account.institution}</CardDescription>
                   </div>
-                  <div className="rounded-2xl bg-muted p-3">
+                  <div className="rounded-lg bg-muted p-3">
                     <Icon className="size-5 text-foreground" />
                   </div>
                 </div>

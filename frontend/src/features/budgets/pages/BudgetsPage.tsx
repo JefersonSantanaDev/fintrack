@@ -12,7 +12,7 @@ import { budgets, formatCurrency } from '@/features/finance'
 export function BudgetsPage() {
   return (
     <div className="space-y-4">
-      <Card className="rounded-[28px] bg-card/85">
+      <Card className="rounded-lg bg-card">
         <CardHeader>
           <CardTitle>Planejamento por categoria</CardTitle>
           <CardDescription>
@@ -26,7 +26,7 @@ export function BudgetsPage() {
           const progress = Math.round((budget.spent / budget.limit) * 100)
 
           return (
-            <Card key={budget.id} className="rounded-[28px] bg-card/85">
+            <Card key={budget.id} className="rounded-lg bg-card">
               <CardHeader>
                 <div className="flex items-center justify-between gap-3">
                   <div>

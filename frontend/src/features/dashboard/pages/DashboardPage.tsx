@@ -42,7 +42,7 @@ const metricBadge = {
 export function DashboardPage() {
   return (
     <div className="space-y-4">
-      <Card className="overflow-hidden rounded-[28px] border border-emerald-500/20 bg-linear-to-br from-emerald-500/10 via-card to-amber-400/10 py-0">
+      <Card className="overflow-hidden border-primary/25 py-0">
         <CardContent className="grid gap-6 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
           <div className="space-y-4">
             <Badge variant="success">Panorama do mes</Badge>
@@ -57,10 +57,10 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 rounded-[24px] border bg-background/80 p-4 shadow-sm">
+          <div className="grid gap-3 rounded-lg border border-border bg-background p-4 shadow-[var(--shadow-level-1)]">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Ritmo financeiro</span>
-              <ArrowUpRight className="size-4 text-emerald-500" />
+              <ArrowUpRight className="size-4 text-primary" />
             </div>
             <div>
               <p className="text-3xl font-semibold">{formatCurrency(4020)}</p>
@@ -81,7 +81,7 @@ export function DashboardPage() {
           const Icon = metricIcons[metric.tone]
 
           return (
-            <Card key={metric.id} className="rounded-[24px] bg-card/85">
+            <Card key={metric.id} className="rounded-lg bg-card">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between gap-3">
                   <CardDescription>{metric.label}</CardDescription>
@@ -103,7 +103,7 @@ export function DashboardPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <Card className="rounded-[28px] bg-card/85">
+        <Card className="rounded-lg bg-card">
           <CardHeader>
             <CardTitle>Orcamentos ativos</CardTitle>
             <CardDescription>Visao rapida das categorias mais sensiveis da rotina.</CardDescription>
@@ -131,7 +131,7 @@ export function DashboardPage() {
         </Card>
 
         <div className="grid gap-4">
-          <Card className="rounded-[28px] bg-card/85">
+          <Card className="rounded-lg bg-card">
             <CardHeader>
               <CardTitle>Metas prioritarias</CardTitle>
               <CardDescription>Objetivos que vao guiar a primeira versao.</CardDescription>
@@ -141,7 +141,7 @@ export function DashboardPage() {
                 const progress = Math.round((goal.currentAmount / goal.targetAmount) * 100)
 
                 return (
-                  <div key={goal.id} className="rounded-2xl border p-4">
+                  <div key={goal.id} className="rounded-lg border p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-medium">{goal.name}</p>
                       <Badge variant={goal.status === 'on_track' ? 'success' : 'warning'}>
@@ -159,14 +159,14 @@ export function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-[28px] bg-card/85">
+          <Card className="rounded-lg bg-card">
             <CardHeader>
               <CardTitle>Quem participa</CardTitle>
               <CardDescription>Permissoes iniciais para a familia.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {familyMembers.map(member => (
-                <div key={member.id} className="rounded-2xl border p-4">
+                <div key={member.id} className="rounded-lg border p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-medium">{member.name}</p>
                     <Badge variant="outline">{member.role}</Badge>
@@ -179,7 +179,7 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <Card className="rounded-[28px] bg-card/85">
+      <Card className="rounded-lg bg-card">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle>Ultimas transacoes</CardTitle>
@@ -214,7 +214,7 @@ export function DashboardPage() {
                   <TableCell
                     className={
                       transaction.amount >= 0
-                        ? 'text-right font-medium text-emerald-600 dark:text-emerald-400'
+                        ? 'text-right font-medium text-primary'
                         : 'text-right font-medium text-foreground'
                     }
                   >

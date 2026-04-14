@@ -95,28 +95,20 @@ export function SignUpPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute left-[-10%] top-[-18%] h-96 w-96 rounded-full bg-cyan-500/18 blur-3xl" />
-        <div className="absolute bottom-[-20%] right-[-10%] h-96 w-96 rounded-full bg-emerald-500/14 blur-3xl" />
-        <div className="absolute inset-0 bg-grid-pattern opacity-90" />
-      </div>
+      <div className="absolute inset-0 -z-10 bg-grid-pattern opacity-70" />
 
       <div className="mx-auto flex min-h-screen w-full max-w-6xl items-center px-4 py-6 sm:px-6 lg:px-8">
-        <div className="grid w-full overflow-hidden rounded-[30px] border bg-card/80 shadow-2xl shadow-cyan-500/10 backdrop-blur lg:grid-cols-[1.1fr_0.9fr]">
-          <section className="relative hidden min-h-[640px] overflow-hidden lg:block">
-            <div className="absolute inset-0 bg-linear-to-br from-cyan-600 via-sky-600 to-emerald-600" />
-            <div className="absolute -left-20 bottom-8 h-56 w-56 rounded-full border border-white/20 bg-white/10 blur-sm" />
-            <div className="absolute -right-24 top-16 h-72 w-72 rounded-full border border-white/20 bg-cyan-200/20 blur-sm" />
-
-            <div className="relative flex h-full flex-col p-10 text-white">
+        <div className="grid w-full overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-level-2)] lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="relative hidden min-h-[640px] border-r border-border p-10 lg:block">
+            <div className="relative flex h-full flex-col">
               <div className="space-y-5">
-                <Badge className="rounded-full border-white/25 bg-white/15 px-3 py-1 text-white hover:bg-white/20">
+                <Badge variant="outline" className="uppercase tracking-[0.14em]">
                   Comece com sua familia
                 </Badge>
-                <h1 className="max-w-md text-4xl font-semibold leading-tight">
+                <h1 className="max-w-md text-5xl font-black leading-[1.02] tracking-tight text-foreground">
                   Crie sua conta e comece a organizar as financas da casa hoje.
                 </h1>
-                <p className="max-w-md text-sm text-cyan-50/90">
+                <p className="max-w-md text-sm text-muted-foreground">
                   Defina seu perfil e evolua com uma rotina financeira simples, visual e colaborativa.
                 </p>
               </div>
@@ -135,13 +127,13 @@ export function SignUpPage() {
                       { label: 'Reserva financeira', value: 68 },
                     ].map((step, index) => (
                       <div key={step.label} className="space-y-1">
-                        <div className="flex items-center justify-between text-[11px] text-emerald-50/80">
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                           <span>{step.label}</span>
                           <span>{step.value}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-white/20">
+                        <div className="h-1.5 rounded-full bg-muted">
                           <motion.div
-                            className="h-1.5 rounded-full bg-linear-to-r from-emerald-100 to-cyan-200"
+                            className="h-1.5 rounded-full bg-primary"
                             initial={{ width: '12%' }}
                             animate={{ width: `${step.value}%` }}
                             transition={{
@@ -160,17 +152,17 @@ export function SignUpPage() {
                 </div>
               </motion.div>
 
-              <div className="mt-auto space-y-4 rounded-3xl border border-white/20 bg-black/20 p-6 backdrop-blur-sm">
+              <div className="mt-auto space-y-4 rounded-lg border border-primary/40 bg-background p-6 shadow-[var(--shadow-level-1)]">
                 <div className="flex items-center gap-3">
-                  <ChartNoAxesCombined className="size-5" />
+                  <ChartNoAxesCombined className="size-5 text-primary" />
                   <p className="text-sm">Visao unica para receitas, gastos e objetivos</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <ShieldCheck className="size-5" />
+                  <ShieldCheck className="size-5 text-primary" />
                   <p className="text-sm">Conta protegida e pronta para uso familiar</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CircleCheckBig className="size-5" />
+                  <CircleCheckBig className="size-5 text-primary" />
                   <p className="text-sm">Onboarding rapido em menos de 2 minutos</p>
                 </div>
               </div>
@@ -182,7 +174,7 @@ export function SignUpPage() {
               <div className="space-y-6">
                 <FinTrackLogo />
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-semibold tracking-tight">Criar sua conta</h2>
+                  <h2 className="text-3xl font-bold tracking-tight">Criar sua conta</h2>
                   <p className="text-sm text-muted-foreground">
                     Configure seu acesso para organizar as financas da familia em um painel unico.
                   </p>
@@ -279,7 +271,7 @@ export function SignUpPage() {
 
                 <p className="text-center text-sm text-muted-foreground">
                   Ja tem conta?{' '}
-                  <Link className="font-medium text-primary hover:underline" to={appPaths.login}>
+                  <Link className="font-semibold text-foreground hover:text-primary hover:underline" to={appPaths.login}>
                     Entrar
                   </Link>
                 </p>
