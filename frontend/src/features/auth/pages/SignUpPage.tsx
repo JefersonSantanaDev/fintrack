@@ -6,6 +6,8 @@ import {
   ArrowRight,
   ChartNoAxesCombined,
   CircleCheckBig,
+  Eye,
+  EyeOff,
   KeyRound,
   Mail,
   ShieldCheck,
@@ -35,6 +37,8 @@ export function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [touched, setTouched] = useState<SignUpTouchedFields>({
     name: false,
     email: false,
@@ -114,7 +118,7 @@ export function SignUpPage() {
               </div>
 
               <motion.div
-                className="relative mt-8 px-1"
+                className="relative mt-8 px-1 pb-8"
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: 'easeOut' }}
@@ -152,7 +156,7 @@ export function SignUpPage() {
                 </div>
               </motion.div>
 
-              <div className="mt-auto space-y-4 rounded-lg border border-primary/40 bg-background p-6 shadow-[var(--shadow-level-1)]">
+              <div className="mt-auto space-y-4 rounded-lg border border-border bg-card p-6 shadow-[var(--shadow-level-1)]">
                 <div className="flex items-center gap-3">
                   <ChartNoAxesCombined className="size-5 text-primary" />
                   <p className="text-sm">Visao unica para receitas, gastos e objetivos</p>
@@ -228,15 +232,27 @@ export function SignUpPage() {
                     <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={event => { setPassword(event.target.value); setTouched(prev => ({ ...prev, password: true })) }}
                       onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
                       autoComplete="new-password"
                       placeholder="No minimo 6 caracteres"
-                      className="h-11 pl-9"
+                      className="h-11 pl-9 pr-10"
                       aria-invalid={passwordRequiredError ? 'true' : 'false'}
                     />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                      onClick={() => setShowPassword(current => !current)}
+                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
                   </div>
                   {passwordRequiredError ? (
                     <p className="text-xs text-destructive">{passwordRequiredError}</p>
@@ -249,15 +265,27 @@ export function SignUpPage() {
                     <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
-                      type="password"
+                      type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={event => { setConfirmPassword(event.target.value); setTouched(prev => ({ ...prev, confirmPassword: true })) }}
                       onBlur={() => setTouched(prev => ({ ...prev, confirmPassword: true }))}
                       autoComplete="new-password"
                       placeholder="Repita a senha"
-                      className="h-11 pl-9"
+                      className="h-11 pl-9 pr-10"
                       aria-invalid={confirmPasswordRequiredError ? 'true' : 'false'}
                     />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                      onClick={() => setShowConfirmPassword(current => !current)}
+                      aria-label={showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
                   </div>
                   {confirmPasswordRequiredError ? (
                     <p className="text-xs text-destructive">{confirmPasswordRequiredError}</p>

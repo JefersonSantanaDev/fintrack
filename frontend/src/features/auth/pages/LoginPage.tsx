@@ -6,6 +6,8 @@ import {
   ArrowRight,
   ChartNoAxesCombined,
   CircleCheckBig,
+  Eye,
+  EyeOff,
   Lock,
   Mail,
   ShieldCheck,
@@ -35,6 +37,7 @@ export function LoginPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [touched, setTouched] = useState<LoginTouchedFields>({ email: false, password: false })
 
   const fromState = location.state as FromState | null
@@ -128,7 +131,7 @@ export function LoginPage() {
                 </div>
               </motion.div>
 
-              <div className="mt-auto space-y-4 rounded-lg border border-primary/40 bg-background p-6 shadow-[var(--shadow-level-1)]">
+              <div className="mt-auto space-y-4 rounded-lg border border-border bg-card p-6 shadow-[var(--shadow-level-1)]">
                 <div className="flex items-center gap-3">
                   <ChartNoAxesCombined className="size-5 text-primary" />
                   <p className="text-sm">Visao consolidada por pessoa e categoria</p>
@@ -155,10 +158,6 @@ export function LoginPage() {
                     Acesse seu painel financeiro familiar para acompanhar tudo em tempo real.
                   </p>
                 </div>
-              </div>
-
-              <div className="rounded-sm border border-[var(--border-olive)] bg-background px-3 py-2 text-xs text-muted-foreground">
-                Acesse com sua conta do FinTrack ou crie um novo cadastro.
               </div>
 
               <form className="space-y-5" onSubmit={handleSubmit} noValidate>
@@ -189,15 +188,27 @@ export function LoginPage() {
                     <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={event => { setPassword(event.target.value); setTouched(prev => ({ ...prev, password: true })) }}
                       onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
                       autoComplete="current-password"
                       placeholder="Sua senha"
-                      className="h-11 pl-9"
+                      className="h-11 pl-9 pr-10"
                       aria-invalid={passwordRequiredError ? 'true' : 'false'}
                     />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                      onClick={() => setShowPassword(current => !current)}
+                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
                   </div>
                   {passwordRequiredError ? (
                     <p className="text-xs text-destructive">{passwordRequiredError}</p>

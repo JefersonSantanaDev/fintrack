@@ -1,14 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="20" fill="#0f172a"/>
-  <rect x="8" y="8" width="48" height="48" rx="16" fill="url(#a)"/>
-  <path d="M19 40.5C23.5 34 27.6 31 31.3 31c3.4 0 5.9 1.7 8.5 3.3 2.5 1.7 5.2 3.4 8.9 3.4" stroke="#F8FAFC" stroke-width="4.2" stroke-linecap="round"/>
-  <rect x="18" y="25" width="7" height="16" rx="3.5" fill="#D1FAE5"/>
-  <rect x="29" y="19" width="7" height="22" rx="3.5" fill="#F8FAFC"/>
-  <rect x="40" y="13" width="7" height="28" rx="3.5" fill="#FDE68A"/>
-  <defs>
-    <linearGradient id="a" x1="12" y1="12" x2="52" y2="52" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#10B981"/>
-      <stop offset="1" stop-color="#0F766E"/>
-    </linearGradient>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="FinTrack">
+  <rect width="64" height="64" rx="12" fill="#000000"/>
+  <rect x="6" y="6" width="52" height="52" rx="10" fill="#141414" stroke="#414141" stroke-opacity="0.8" stroke-width="2"/>
+
+  <rect x="20" y="34" width="6" height="14" rx="3" fill="#166534"/>
+  <rect x="29" y="26" width="6" height="22" rx="3" fill="#f4f692"/>
+  <rect x="38" y="18" width="6" height="30" rx="3" fill="#faff69"/>
 </svg>

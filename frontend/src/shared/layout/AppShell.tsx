@@ -1,11 +1,13 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   ArrowLeftRight,
   ChevronRight,
   LayoutDashboard,
+  Moon,
   PiggyBank,
   Settings,
+  Sun,
   Target,
   Users,
   Wallet,
@@ -14,6 +16,7 @@ import {
 import { appPaths } from '@/app/paths'
 import { useAuth } from '@/features/auth'
 import { FinTrackLogo } from '@/shared/branding/FinTrackLogo'
+import { AppShellLoading } from '@/shared/layout/AppShellLoading'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
@@ -72,14 +75,44 @@ function pageMeta(pathname: string) {
   return routeMeta.find(item => pathname.startsWith(item.match)) ?? routeMeta[0]
 }
 
+const postLoginSkeletonDurationMs = 1400
+
 export function AppShell() {
   const location = useLocation()
-  const { user, logout, isSubmitting } = useAuth()
+  const { user, logout, isSubmitting, isPostLoginLoading, finishPostLoginLoading } = useAuth()
+  const [themeMode, setThemeMode] = useState<'dark' | 'light'>(() => {
+    if (typeof window === 'undefined') {
+      return 'dark'
+    }
+
+    return window.localStorage.getItem('fintrack-theme-mode') === 'light'
+      ? 'light'
+      : 'dark'
+  })
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', 'clickhouse')
-    document.documentElement.classList.remove('dark')
-  }, [])
+    const isLight = themeMode === 'light'
+    document.documentElement.setAttribute(
+      'data-theme',
+      isLight ? 'clickhouse-light' : 'clickhouse'
+    )
+    document.documentElement.classList.toggle('dark', !isLight)
+    window.localStorage.setItem('fintrack-theme-mode', themeMode)
+  }, [themeMode])
+
+  useEffect(() => {
+    if (!isPostLoginLoading) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      finishPostLoginLoading()
+    }, postLoginSkeletonDurationMs)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [isPostLoginLoading, finishPostLoginLoading])
 
   const currentMonth = useMemo(() => {
     return new Intl.DateTimeFormat('pt-BR', {
@@ -138,6 +171,26 @@ export function AppShell() {
               >
                 {isSubmitting ? 'Saindo...' : 'Sair'}
               </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={
+                  themeMode === 'dark'
+                    ? 'Ativar tema claro'
+                    : 'Ativar tema escuro'
+                }
+                onClick={() =>
+                  setThemeMode(current =>
+                    current === 'dark' ? 'light' : 'dark'
+                  )
+                }
+              >
+                {themeMode === 'dark' ? (
+                  <Sun className="size-4" />
+                ) : (
+                  <Moon className="size-4" />
+                )}
+              </Button>
             </div>
           </div>
         </header>
@@ -155,8 +208,8 @@ export function AppShell() {
                     cn(
                       'flex min-w-max items-center gap-2 rounded-sm px-4 py-2 text-sm font-semibold transition-colors',
                       isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        ? 'bg-primary !text-primary-foreground hover:bg-primary hover:!text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:!text-foreground'
                     )
                   }
                 >
@@ -195,8 +248,8 @@ export function AppShell() {
                           cn(
                             'flex items-center justify-between rounded-sm px-3 py-3 text-sm font-semibold transition-colors',
                             isActive
-                              ? 'bg-primary text-primary-foreground shadow-[var(--shadow-level-1)]'
-                              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                              ? 'bg-primary !text-primary-foreground shadow-[var(--shadow-level-1)] hover:bg-primary hover:!text-primary-foreground'
+                              : 'text-muted-foreground hover:bg-accent hover:!text-foreground'
                           )
                         }
                       >
@@ -223,7 +276,7 @@ export function AppShell() {
           </aside>
 
           <main className="min-w-0">
-            <Outlet />
+            {isPostLoginLoading ? <AppShellLoading /> : <Outlet />}
           </main>
         </div>
       </div>

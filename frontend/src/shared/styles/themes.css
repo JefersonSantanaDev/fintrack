@@ -80,6 +80,81 @@
   --shadow-inset: 0px 4px 4px rgb(0 0 0 / 0.06), 0px 4px 25px inset rgb(0 0 0 / 0.14);
 }
 
+:root[data-theme="clickhouse-light"],
+:root[data-theme="clickhouse-light"].dark,
+:root.dark[data-theme="clickhouse-light"] {
+  --spacing: 0.25rem;
+  --radius: 0.5rem;
+
+  --background: #fafbf5;
+  --foreground: #111315;
+
+  --card: #ffffff;
+  --card-foreground: #111315;
+
+  --popover: #ffffff;
+  --popover-foreground: #111315;
+
+  --primary: #e4ec5f;
+  --primary-foreground: #151515;
+
+  --secondary: #1c6a3f;
+  --secondary-foreground: #ffffff;
+
+  --muted: #eff2e5;
+  --muted-foreground: #4e5448;
+
+  --accent: #e5ead8;
+  --accent-foreground: #151515;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --success: #166534;
+  --success-foreground: #ffffff;
+
+  --warning: #ecef9d;
+  --warning-foreground: #151515;
+
+  --info: #5b636b;
+  --info-foreground: #ffffff;
+
+  --border: rgb(52 52 52 / 0.2);
+  --input: #fcfdf8;
+  --ring: #8a9300;
+
+  --chart-1: #8a9300;
+  --chart-2: #1c6a3f;
+  --chart-3: #14572f;
+  --chart-4: #b0b82f;
+  --chart-5: #5a5f54;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #151515;
+  --sidebar-primary: #e4ec5f;
+  --sidebar-primary-foreground: #151515;
+  --sidebar-accent: #eff2e5;
+  --sidebar-accent-foreground: #151515;
+  --sidebar-border: rgb(52 52 52 / 0.2);
+  --sidebar-ring: #8a9300;
+
+  --neon-volt: #e4ec5f;
+  --forest-green: #1c6a3f;
+  --forest-dark: #14572f;
+  --pale-yellow: #b6bd2c;
+  --border-olive: #4f5100;
+  --olive-dark: #161600;
+  --charcoal: #414141;
+  --charcoal-deep: #343434;
+  --near-black: #f7f9ef;
+  --hover-gray: #dfe5ce;
+  --pressed-black: #4f5100;
+
+  --shadow-level-1: 0px 1px 3px rgb(17 19 21 / 0.08), 0px 1px 2px -1px rgb(17 19 21 / 0.08);
+  --shadow-level-2: 0px 10px 20px -8px rgb(17 19 21 / 0.18), 0px 4px 8px -6px rgb(17 19 21 / 0.12);
+  --shadow-inset: 0px 4px 4px rgb(0 0 0 / 0.06), 0px 4px 25px inset rgb(0 0 0 / 0.14);
+}
+
 /* Register theme variables with Tailwind v4 */
 @theme inline {
   --color-background: var(--background);

@@ -86,3 +86,9 @@ button,
     linear-gradient(to right, rgb(79 81 0 / 0.22) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(79 81 0 / 0.22) 1px, transparent 1px);
 }
+
+:root[data-theme="clickhouse-light"] .bg-grid-pattern {
+  background-image:
+    linear-gradient(to right, rgb(79 81 0 / 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(79 81 0 / 0.09) 1px, transparent 1px);
+}

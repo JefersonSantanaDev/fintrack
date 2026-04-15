@@ -1,9 +1,13 @@
-export function AuthLoadingScreen() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-      <div className="rounded-lg border bg-card px-5 py-3 text-sm text-muted-foreground">
-        Carregando sua sessao...
-      </div>
-    </div>
-  )
+import { FinTrackLoading } from '@/shared/ui/fintrack-loading'
+
+interface AuthLoadingScreenProps {
+  message?: string
+  description?: string
+}
+
+export function AuthLoadingScreen({
+  message: _message = 'Carregando sua sessao',
+  description: _description = 'Sincronizando dados da sua conta',
+}: AuthLoadingScreenProps) {
+  return <FinTrackLoading />
 }

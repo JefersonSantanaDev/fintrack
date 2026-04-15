@@ -16,6 +16,8 @@ interface AuthContextValue {
   isAuthenticated: boolean
   isInitializing: boolean
   isSubmitting: boolean
+  isPostLoginLoading: boolean
+  finishPostLoginLoading: () => void
   login: (input: LoginInput) => Promise<void>
   signUp: (input: SignUpInput) => Promise<void>
   logout: () => Promise<void>
@@ -31,6 +33,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPostLoginLoading, setIsPostLoginLoading] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -57,10 +60,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = useCallback(async (input: LoginInput) => {
     setIsSubmitting(true)
+    setIsPostLoginLoading(false)
 
     try {
       const loggedUser = await loginWithEmailAndPassword(input)
       setUser(loggedUser)
+      setIsPostLoginLoading(true)
     } finally {
       setIsSubmitting(false)
     }
@@ -68,10 +73,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signUp = useCallback(async (input: SignUpInput) => {
     setIsSubmitting(true)
+    setIsPostLoginLoading(false)
 
     try {
       const createdUser = await signUpWithEmailAndPassword(input)
       setUser(createdUser)
+      setIsPostLoginLoading(true)
     } finally {
       setIsSubmitting(false)
     }
@@ -83,9 +90,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await logoutSession()
       setUser(null)
+      setIsPostLoginLoading(false)
     } finally {
       setIsSubmitting(false)
     }
+  }, [])
+
+  const finishPostLoginLoading = useCallback(() => {
+    setIsPostLoginLoading(false)
   }, [])
 
   const value = useMemo<AuthContextValue>(() => {
@@ -94,11 +106,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isAuthenticated: Boolean(user),
       isInitializing,
       isSubmitting,
+      isPostLoginLoading,
+      finishPostLoginLoading,
       login,
       signUp,
       logout,
     }
-  }, [user, isInitializing, isSubmitting, login, signUp, logout])
+  }, [
+    user,
+    isInitializing,
+    isSubmitting,
+    isPostLoginLoading,
+    finishPostLoginLoading,
+    login,
+    signUp,
+    logout,
+  ])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
