@@ -95,6 +95,21 @@ Se quiser desabilitar docs em ambiente sensivel:
 API_DOCS_ENABLED=false
 ```
 
+## Seguranca dos Endpoints de Auth
+
+As rotas publicas de autenticacao usam duas camadas:
+
+1. Rate limit por rota (throttling HTTP).
+2. Bloqueio temporario de login por tentativas invalidas sucessivas.
+
+Variaveis de ambiente:
+
+```bash
+AUTH_LOGIN_MAX_FAILED_ATTEMPTS=5
+AUTH_LOGIN_ATTEMPT_WINDOW_MS=600000
+AUTH_LOGIN_LOCK_DURATION_MS=900000
+```
+
 ## Problemas Comuns
 
 ### ReDoc em tela preta

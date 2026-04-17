@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignUpDto } from './dto/signup.dto';
+import { LoginAttemptsService } from './login-attempts.service';
 export interface PublicUser {
     id: string;
     name: string;
@@ -19,12 +20,13 @@ export declare class AuthService {
     private readonly prisma;
     private readonly jwtService;
     private readonly configService;
+    private readonly loginAttemptsService;
     private readonly accessSecret;
     private readonly refreshSecret;
     private readonly accessExpiresIn;
     private readonly refreshExpiresIn;
     private readonly bcryptSaltRounds;
-    constructor(prisma: PrismaService, jwtService: JwtService, configService: ConfigService);
+    constructor(prisma: PrismaService, jwtService: JwtService, configService: ConfigService, loginAttemptsService: LoginAttemptsService);
     signUp(dto: SignUpDto): Promise<AuthResponse>;
     login(dto: LoginDto): Promise<AuthResponse>;
     refresh(dto: RefreshTokenDto): Promise<AuthResponse>;

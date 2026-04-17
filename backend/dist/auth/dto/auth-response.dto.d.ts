@@ -1,0 +1,21 @@
+export declare class PublicUserDto {
+    id: string;
+    name: string;
+    email: string;
+}
+export declare class AuthResponseDto {
+    user: PublicUserDto;
+    accessToken: string;
+    refreshToken: string;
+}
+export declare class MeResponseDto {
+    user: PublicUserDto;
+}
+export declare class LogoutResponseDto {
+    success: boolean;
+}
+export declare class ApiErrorResponseDto {
+    statusCode: number;
+    message: string;
+    error: string;
+}

@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SignUpDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class SignUpDto {
     name;
@@ -18,16 +19,33 @@ class SignUpDto {
 }
 exports.SignUpDto = SignUpDto;
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome de exibicao do usuario.',
+        minLength: 2,
+        maxLength: 80,
+        example: 'Jeferson Santana',
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(2),
     (0, class_validator_1.MaxLength)(80),
     __metadata("design:type", String)
 ], SignUpDto.prototype, "name", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Email unico usado para autenticacao.',
+        format: 'email',
+        example: 'jeferson@fintrack.app',
+    }),
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], SignUpDto.prototype, "email", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Senha em texto plano (sera hasheada no servidor).',
+        minLength: 6,
+        maxLength: 72,
+        example: '123456',
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(6),
     (0, class_validator_1.MaxLength)(72),

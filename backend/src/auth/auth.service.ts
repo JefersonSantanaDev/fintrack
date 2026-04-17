@@ -14,6 +14,7 @@ import { LoginDto } from './dto/login.dto';
 import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignUpDto } from './dto/signup.dto';
+import { LoginAttemptsService } from './login-attempts.service';
 import {
   AccessTokenPayload,
   RefreshTokenPayload,
@@ -43,6 +44,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly loginAttemptsService: LoginAttemptsService,
   ) {
     this.accessSecret = this.configService.getOrThrow<string>('JWT_ACCESS_SECRET');
     this.refreshSecret = this.configService.getOrThrow<string>(
@@ -84,18 +86,23 @@ export class AuthService {
 
   async login(dto: LoginDto): Promise<AuthResponse> {
     const email = this.normalizeEmail(dto.email);
+    this.loginAttemptsService.ensureCanAttempt(email);
+
     const user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
+      this.loginAttemptsService.registerFailedAttempt(email);
       throw new UnauthorizedException('Email ou senha invalidos.');
     }
 
     const passwordMatch = await bcrypt.compare(dto.password, user.passwordHash);
 
     if (!passwordMatch) {
+      this.loginAttemptsService.registerFailedAttempt(email);
       throw new UnauthorizedException('Email ou senha invalidos.');
     }
 
+    this.loginAttemptsService.clearAttempts(email);
     return this.buildAuthResponse(user);
   }
 

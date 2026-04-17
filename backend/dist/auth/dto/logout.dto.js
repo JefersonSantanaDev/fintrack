@@ -10,12 +10,18 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LogoutDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class LogoutDto {
     refreshToken;
 }
 exports.LogoutDto = LogoutDto;
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Refresh token da sessao que sera invalidada.',
+        minLength: 16,
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh-token-payload.signature',
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(16),
     __metadata("design:type", String)
