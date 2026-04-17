@@ -105,9 +105,16 @@ As rotas publicas de autenticacao usam duas camadas:
 Variaveis de ambiente:
 
 ```bash
+AUTH_LOGIN_LOCK_ENABLED=true
 AUTH_LOGIN_MAX_FAILED_ATTEMPTS=5
 AUTH_LOGIN_ATTEMPT_WINDOW_MS=600000
 AUTH_LOGIN_LOCK_DURATION_MS=900000
+```
+
+Para testes automatizados com muitos logins seguidos, voce pode desativar o lock temporariamente:
+
+```bash
+AUTH_LOGIN_LOCK_ENABLED=false
 ```
 
 ## Problemas Comuns

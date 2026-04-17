@@ -15,16 +15,21 @@ const config_1 = require("@nestjs/config");
 let LoginAttemptsService = class LoginAttemptsService {
     configService;
     attempts = new Map();
+    enabled;
     maxFailedAttempts;
     attemptWindowMs;
     lockDurationMs;
     constructor(configService) {
         this.configService = configService;
+        this.enabled = this.parseBoolean(this.configService.get('AUTH_LOGIN_LOCK_ENABLED'), true);
         this.maxFailedAttempts = this.parsePositiveNumber(this.configService.get('AUTH_LOGIN_MAX_FAILED_ATTEMPTS'), 5);
         this.attemptWindowMs = this.parsePositiveNumber(this.configService.get('AUTH_LOGIN_ATTEMPT_WINDOW_MS'), 10 * 60_000);
         this.lockDurationMs = this.parsePositiveNumber(this.configService.get('AUTH_LOGIN_LOCK_DURATION_MS'), 15 * 60_000);
     }
     ensureCanAttempt(email) {
+        if (!this.enabled) {
+            return;
+        }
         const key = this.normalizeEmail(email);
         const state = this.attempts.get(key);
         if (!state) {
@@ -44,6 +49,9 @@ let LoginAttemptsService = class LoginAttemptsService {
         }
     }
     registerFailedAttempt(email) {
+        if (!this.enabled) {
+            return;
+        }
         const key = this.normalizeEmail(email);
         const current = this.attempts.get(key);
         const now = Date.now();
@@ -64,6 +72,9 @@ let LoginAttemptsService = class LoginAttemptsService {
         });
     }
     clearAttempts(email) {
+        if (!this.enabled) {
+            return;
+        }
         this.attempts.delete(this.normalizeEmail(email));
     }
     normalizeEmail(email) {
@@ -75,6 +86,19 @@ let LoginAttemptsService = class LoginAttemptsService {
             return fallback;
         }
         return parsed;
+    }
+    parseBoolean(input, fallback) {
+        if (typeof input !== 'string') {
+            return fallback;
+        }
+        const normalized = input.trim().toLowerCase();
+        if (normalized === 'true') {
+            return true;
+        }
+        if (normalized === 'false') {
+            return false;
+        }
+        return fallback;
     }
 };
 exports.LoginAttemptsService = LoginAttemptsService;

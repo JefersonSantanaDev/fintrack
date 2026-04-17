@@ -10,11 +10,16 @@ interface LoginAttemptState {
 @Injectable()
 export class LoginAttemptsService {
   private readonly attempts = new Map<string, LoginAttemptState>();
+  private readonly enabled: boolean;
   private readonly maxFailedAttempts: number;
   private readonly attemptWindowMs: number;
   private readonly lockDurationMs: number;
 
   constructor(private readonly configService: ConfigService) {
+    this.enabled = this.parseBoolean(
+      this.configService.get<string>('AUTH_LOGIN_LOCK_ENABLED'),
+      true,
+    );
     this.maxFailedAttempts = this.parsePositiveNumber(
       this.configService.get<string>('AUTH_LOGIN_MAX_FAILED_ATTEMPTS'),
       5,
@@ -30,6 +35,10 @@ export class LoginAttemptsService {
   }
 
   ensureCanAttempt(email: string) {
+    if (!this.enabled) {
+      return;
+    }
+
     const key = this.normalizeEmail(email);
     const state = this.attempts.get(key);
 
@@ -58,6 +67,10 @@ export class LoginAttemptsService {
   }
 
   registerFailedAttempt(email: string) {
+    if (!this.enabled) {
+      return;
+    }
+
     const key = this.normalizeEmail(email);
     const current = this.attempts.get(key);
     const now = Date.now();
@@ -82,6 +95,10 @@ export class LoginAttemptsService {
   }
 
   clearAttempts(email: string) {
+    if (!this.enabled) {
+      return;
+    }
+
     this.attempts.delete(this.normalizeEmail(email));
   }
 
@@ -96,5 +113,22 @@ export class LoginAttemptsService {
     }
 
     return parsed;
+  }
+
+  private parseBoolean(input: string | undefined, fallback: boolean) {
+    if (typeof input !== 'string') {
+      return fallback;
+    }
+
+    const normalized = input.trim().toLowerCase();
+    if (normalized === 'true') {
+      return true;
+    }
+
+    if (normalized === 'false') {
+      return false;
+    }
+
+    return fallback;
   }
 }

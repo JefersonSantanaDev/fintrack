@@ -44,6 +44,7 @@ Guia completo de uso:
 - [API Docs Guide](../docs/API_DOCS_GUIDE.md)
 
 Controles de seguranca de auth (rate limit + lock de login):
+- `AUTH_LOGIN_LOCK_ENABLED`
 - `AUTH_LOGIN_MAX_FAILED_ATTEMPTS`
 - `AUTH_LOGIN_ATTEMPT_WINDOW_MS`
 - `AUTH_LOGIN_LOCK_DURATION_MS`
