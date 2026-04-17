@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppController = void 0;
 const common_1 = require("@nestjs/common");
 const throttler_1 = require("@nestjs/throttler");
+const swagger_1 = require("@nestjs/swagger");
 const app_service_1 = require("./app.service");
 let AppController = class AppController {
     appService;
@@ -26,11 +27,28 @@ exports.AppController = AppController;
 __decorate([
     (0, common_1.Get)('health'),
     (0, throttler_1.SkipThrottle)({ default: true }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Healthcheck da API',
+        description: 'Valida se a aplicacao esta operacional.',
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Servico em funcionamento.',
+        schema: {
+            type: 'object',
+            properties: {
+                status: { type: 'string', example: 'ok' },
+                service: { type: 'string', example: 'fintrack-backend' },
+                timestamp: { type: 'string', format: 'date-time', example: '2026-04-17T07:12:30.000Z' },
+            },
+            required: ['status', 'service', 'timestamp'],
+        },
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AppController.prototype, "getHealth", null);
 exports.AppController = AppController = __decorate([
+    (0, swagger_1.ApiTags)('App'),
     (0, common_1.Controller)(),
     __metadata("design:paramtypes", [app_service_1.AppService])
 ], AppController);

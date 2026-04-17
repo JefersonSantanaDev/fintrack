@@ -68,13 +68,34 @@ export class ApiErrorResponseDto {
 
   @ApiProperty({
     description: 'Mensagem de erro da API.',
-    example: 'Email ou senha invalidos.',
+    example: 'Mensagem de erro.',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Tipo de erro HTTP.',
     example: 'Unauthorized',
+  })
+  error!: string;
+}
+
+export class ApiValidationErrorResponseDto {
+  @ApiProperty({
+    description: 'Codigo HTTP retornado no erro.',
+    example: 400,
+  })
+  statusCode!: number;
+
+  @ApiProperty({
+    description: 'Lista de erros de validacao do payload.',
+    type: [String],
+    example: ['email must be an email', 'password must be longer than or equal to 6 characters'],
+  })
+  message!: string[];
+
+  @ApiProperty({
+    description: 'Tipo de erro HTTP.',
+    example: 'Bad Request',
   })
   error!: string;
 }

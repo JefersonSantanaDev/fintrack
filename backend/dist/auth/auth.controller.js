@@ -24,6 +24,7 @@ const refresh_token_dto_1 = require("./dto/refresh-token.dto");
 const signup_dto_1 = require("./dto/signup.dto");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const auth_service_1 = require("./auth.service");
+const swagger_error_examples_1 = require("../docs/swagger-error-examples");
 const oneMinuteMs = 60_000;
 const fiveMinutesMs = 5 * 60_000;
 let AuthController = class AuthController {
@@ -62,15 +63,17 @@ __decorate([
     }),
     (0, swagger_1.ApiConflictResponse)({
         description: 'Email ja cadastrado.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiErrorContent)({ emailEmUso: swagger_error_examples_1.swaggerErrorExamples.emailEmUso }),
     }),
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Payload invalido.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiValidationErrorContent)({
+            payloadInvalido: swagger_error_examples_1.swaggerErrorExamples.payloadInvalido,
+        }),
     }),
     (0, swagger_1.ApiTooManyRequestsResponse)({
         description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiErrorContent)({ rateLimitRota: swagger_error_examples_1.swaggerErrorExamples.rateLimitRota }),
     }),
     (0, throttler_1.Throttle)({ default: { limit: 3, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } }),
     __param(0, (0, common_1.Body)()),
@@ -92,15 +95,19 @@ __decorate([
     }),
     (0, swagger_1.ApiUnauthorizedResponse)({
         description: 'Credenciais invalidas.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiErrorContent)({
+            credenciaisInvalidas: swagger_error_examples_1.swaggerErrorExamples.credenciaisInvalidas,
+        }),
     }),
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Payload invalido.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiValidationErrorContent)({
+            payloadInvalido: swagger_error_examples_1.swaggerErrorExamples.payloadInvalido,
+        }),
     }),
     (0, swagger_1.ApiTooManyRequestsResponse)({
         description: 'Muitas tentativas de login (rate limit ou bloqueio temporario por tentativas invalidas).',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiErrorContent)({ rateLimitAuth: swagger_error_examples_1.swaggerErrorExamples.rateLimitAuth }),
     }),
     (0, throttler_1.Throttle)({ default: { limit: 5, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } }),
     __param(0, (0, common_1.Body)()),
@@ -122,15 +129,17 @@ __decorate([
     }),
     (0, swagger_1.ApiUnauthorizedResponse)({
         description: 'Refresh token invalido ou expirado.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiErrorContent)({ refreshInvalido: swagger_error_examples_1.swaggerErrorExamples.refreshInvalido }),
     }),
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Payload invalido.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiValidationErrorContent)({
+            payloadInvalido: swagger_error_examples_1.swaggerErrorExamples.payloadInvalido,
+        }),
     }),
     (0, swagger_1.ApiTooManyRequestsResponse)({
         description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiErrorContent)({ rateLimitRota: swagger_error_examples_1.swaggerErrorExamples.rateLimitRota }),
     }),
     (0, throttler_1.Throttle)({ default: { limit: 10, ttl: oneMinuteMs, blockDuration: oneMinuteMs } }),
     __param(0, (0, common_1.Body)()),
@@ -152,11 +161,13 @@ __decorate([
     }),
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Payload invalido.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiValidationErrorContent)({
+            payloadInvalido: swagger_error_examples_1.swaggerErrorExamples.payloadInvalido,
+        }),
     }),
     (0, swagger_1.ApiTooManyRequestsResponse)({
         description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiErrorContent)({ rateLimitRota: swagger_error_examples_1.swaggerErrorExamples.rateLimitRota }),
     }),
     (0, throttler_1.Throttle)({ default: { limit: 20, ttl: oneMinuteMs, blockDuration: oneMinuteMs } }),
     __param(0, (0, common_1.Body)()),
@@ -178,11 +189,13 @@ __decorate([
     }),
     (0, swagger_1.ApiUnauthorizedResponse)({
         description: 'Access token invalido ou ausente.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiErrorContent)({
+            accessTokenInvalido: swagger_error_examples_1.swaggerErrorExamples.accessTokenInvalido,
+        }),
     }),
     (0, swagger_1.ApiTooManyRequestsResponse)({
         description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
-        type: auth_response_dto_1.ApiErrorResponseDto,
+        content: (0, swagger_error_examples_1.apiErrorContent)({ rateLimitRota: swagger_error_examples_1.swaggerErrorExamples.rateLimitRota }),
     }),
     (0, throttler_1.Throttle)({ default: { limit: 60, ttl: oneMinuteMs, blockDuration: oneMinuteMs } }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -192,6 +205,7 @@ __decorate([
 ], AuthController.prototype, "me", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Auth'),
+    (0, swagger_1.ApiExtraModels)(auth_response_dto_1.ApiErrorResponseDto, auth_response_dto_1.ApiValidationErrorResponseDto),
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])
 ], AuthController);

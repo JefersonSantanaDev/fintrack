@@ -13,6 +13,7 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiExtraModels,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -23,6 +24,7 @@ import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from './decorators/current-user.decorator';
 import {
   ApiErrorResponseDto,
+  ApiValidationErrorResponseDto,
   AuthResponseDto,
   LogoutResponseDto,
   MeResponseDto,
@@ -34,11 +36,17 @@ import { SignUpDto } from './dto/signup.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
 import type { AuthenticatedUser } from './types/auth-user.type';
+import {
+  apiErrorContent,
+  apiValidationErrorContent,
+  swaggerErrorExamples,
+} from '../docs/swagger-error-examples';
 
 const oneMinuteMs = 60_000;
 const fiveMinutesMs = 5 * 60_000;
 
 @ApiTags('Auth')
+@ApiExtraModels(ApiErrorResponseDto, ApiValidationErrorResponseDto)
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -56,15 +64,17 @@ export class AuthController {
   })
   @ApiConflictResponse({
     description: 'Email ja cadastrado.',
-    type: ApiErrorResponseDto,
+    content: apiErrorContent({ emailEmUso: swaggerErrorExamples.emailEmUso }),
   })
   @ApiBadRequestResponse({
     description: 'Payload invalido.',
-    type: ApiErrorResponseDto,
+    content: apiValidationErrorContent({
+      payloadInvalido: swaggerErrorExamples.payloadInvalido,
+    }),
   })
   @ApiTooManyRequestsResponse({
     description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
-    type: ApiErrorResponseDto,
+    content: apiErrorContent({ rateLimitRota: swaggerErrorExamples.rateLimitRota }),
   })
   @Throttle({ default: { limit: 3, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } })
   signUp(@Body() dto: SignUpDto): Promise<AuthResponseDto> {
@@ -84,16 +94,20 @@ export class AuthController {
   })
   @ApiUnauthorizedResponse({
     description: 'Credenciais invalidas.',
-    type: ApiErrorResponseDto,
+    content: apiErrorContent({
+      credenciaisInvalidas: swaggerErrorExamples.credenciaisInvalidas,
+    }),
   })
   @ApiBadRequestResponse({
     description: 'Payload invalido.',
-    type: ApiErrorResponseDto,
+    content: apiValidationErrorContent({
+      payloadInvalido: swaggerErrorExamples.payloadInvalido,
+    }),
   })
   @ApiTooManyRequestsResponse({
     description:
       'Muitas tentativas de login (rate limit ou bloqueio temporario por tentativas invalidas).',
-    type: ApiErrorResponseDto,
+    content: apiErrorContent({ rateLimitAuth: swaggerErrorExamples.rateLimitAuth }),
   })
   @Throttle({ default: { limit: 5, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } })
   login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
@@ -113,15 +127,17 @@ export class AuthController {
   })
   @ApiUnauthorizedResponse({
     description: 'Refresh token invalido ou expirado.',
-    type: ApiErrorResponseDto,
+    content: apiErrorContent({ refreshInvalido: swaggerErrorExamples.refreshInvalido }),
   })
   @ApiBadRequestResponse({
     description: 'Payload invalido.',
-    type: ApiErrorResponseDto,
+    content: apiValidationErrorContent({
+      payloadInvalido: swaggerErrorExamples.payloadInvalido,
+    }),
   })
   @ApiTooManyRequestsResponse({
     description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
-    type: ApiErrorResponseDto,
+    content: apiErrorContent({ rateLimitRota: swaggerErrorExamples.rateLimitRota }),
   })
   @Throttle({ default: { limit: 10, ttl: oneMinuteMs, blockDuration: oneMinuteMs } })
   refresh(@Body() dto: RefreshTokenDto): Promise<AuthResponseDto> {
@@ -141,11 +157,13 @@ export class AuthController {
   })
   @ApiBadRequestResponse({
     description: 'Payload invalido.',
-    type: ApiErrorResponseDto,
+    content: apiValidationErrorContent({
+      payloadInvalido: swaggerErrorExamples.payloadInvalido,
+    }),
   })
   @ApiTooManyRequestsResponse({
     description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
-    type: ApiErrorResponseDto,
+    content: apiErrorContent({ rateLimitRota: swaggerErrorExamples.rateLimitRota }),
   })
   @Throttle({ default: { limit: 20, ttl: oneMinuteMs, blockDuration: oneMinuteMs } })
   logout(@Body() dto: LogoutDto): Promise<LogoutResponseDto> {
@@ -165,11 +183,13 @@ export class AuthController {
   })
   @ApiUnauthorizedResponse({
     description: 'Access token invalido ou ausente.',
-    type: ApiErrorResponseDto,
+    content: apiErrorContent({
+      accessTokenInvalido: swaggerErrorExamples.accessTokenInvalido,
+    }),
   })
   @ApiTooManyRequestsResponse({
     description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
-    type: ApiErrorResponseDto,
+    content: apiErrorContent({ rateLimitRota: swaggerErrorExamples.rateLimitRota }),
   })
   @Throttle({ default: { limit: 60, ttl: oneMinuteMs, blockDuration: oneMinuteMs } })
   me(@CurrentUser() user: AuthenticatedUser): Promise<MeResponseDto> {

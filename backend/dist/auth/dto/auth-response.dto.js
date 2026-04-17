@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApiErrorResponseDto = exports.LogoutResponseDto = exports.MeResponseDto = exports.AuthResponseDto = exports.PublicUserDto = void 0;
+exports.ApiValidationErrorResponseDto = exports.ApiErrorResponseDto = exports.LogoutResponseDto = exports.MeResponseDto = exports.AuthResponseDto = exports.PublicUserDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 class PublicUserDto {
     id;
@@ -104,7 +104,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Mensagem de erro da API.',
-        example: 'Email ou senha invalidos.',
+        example: 'Mensagem de erro.',
     }),
     __metadata("design:type", String)
 ], ApiErrorResponseDto.prototype, "message", void 0);
@@ -115,4 +115,32 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], ApiErrorResponseDto.prototype, "error", void 0);
+class ApiValidationErrorResponseDto {
+    statusCode;
+    message;
+    error;
+}
+exports.ApiValidationErrorResponseDto = ApiValidationErrorResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Codigo HTTP retornado no erro.',
+        example: 400,
+    }),
+    __metadata("design:type", Number)
+], ApiValidationErrorResponseDto.prototype, "statusCode", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Lista de erros de validacao do payload.',
+        type: [String],
+        example: ['email must be an email', 'password must be longer than or equal to 6 characters'],
+    }),
+    __metadata("design:type", Array)
+], ApiValidationErrorResponseDto.prototype, "message", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Tipo de erro HTTP.',
+        example: 'Bad Request',
+    }),
+    __metadata("design:type", String)
+], ApiValidationErrorResponseDto.prototype, "error", void 0);
 //# sourceMappingURL=auth-response.dto.js.map

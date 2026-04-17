@@ -19,3 +19,8 @@ export declare class ApiErrorResponseDto {
     message: string;
     error: string;
 }
+export declare class ApiValidationErrorResponseDto {
+    statusCode: number;
+    message: string[];
+    error: string;
+}

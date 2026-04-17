@@ -56,6 +56,13 @@ Ponto forte:
 3. Produto/negocio consulta ReDoc ou Scalar para entendimento funcional.
 4. Em regressao, comparar comportamento no Swagger com o contrato OpenAPI JSON.
 
+## Padrao de Examples (obrigatorio)
+
+- Nao fixar o mesmo `example` para todos os erros no DTO global.
+- Definir examples por endpoint/status (`400`, `401`, `409`, `429`) no controller.
+- Manter o schema de erro reutilizavel e os exemplos contextuais por resposta.
+- Reutilizar funcoes utilitarias em `src/docs/swagger-error-examples.ts` para padronizacao.
+
 ## Como Usar Na Pratica
 
 ### Testar login no Swagger
