@@ -1,6 +1,6 @@
 # Backend Overview - FinTrack
 
-Ultima atualizacao: 2026-04-12
+Ultima atualizacao: 2026-04-17
 
 ## 1) Objetivo deste documento
 
@@ -12,7 +12,7 @@ Este documento explica como o backend do FinTrack esta montado hoje, de forma pr
 - HTTP adapter: Fastify
 - ORM: Prisma
 - Banco: PostgreSQL
-- Autenticacao: JWT (access + refresh com rotacao)
+- Autenticacao: JWT (access token no header + refresh token em cookie httpOnly com rotacao)
 - Validacao: class-validator + ValidationPipe global
 - Infra local: Docker Compose (frontend + backend + db)
 
@@ -85,17 +85,21 @@ Auth:
 
 ### Refresh (rotacao)
 
-1. valida assinatura do refresh token;
-2. busca `jti` no banco;
-3. valida hash do token recebido;
-4. revoga token antigo (`revokedAt`);
-5. emite novo par de tokens.
+1. le refresh token do cookie httpOnly;
+2. valida assinatura do refresh token;
+3. busca `jti` no banco;
+4. valida hash do token recebido;
+5. revoga token antigo (`revokedAt`);
+6. emite novo par de tokens;
+7. devolve access token no JSON e novo refresh token no cookie.
 
 ### Logout
 
-1. tenta validar refresh token;
-2. revoga token ativo no banco;
-3. retorna sucesso mesmo se token estiver invalido (logout idempotente).
+1. le refresh token do cookie httpOnly (se existir);
+2. tenta validar refresh token;
+3. revoga token ativo no banco;
+4. limpa cookie no response;
+5. retorna sucesso mesmo se token estiver invalido (logout idempotente).
 
 ### Me (sessao atual)
 
@@ -110,8 +114,6 @@ DTOs atuais:
 
 - `SignUpDto`
 - `LoginDto`
-- `RefreshTokenDto`
-- `LogoutDto`
 
 Todos passam pela validacao global. Isso reduz erro de contrato e protege a API contra payload inesperado.
 
@@ -150,6 +152,11 @@ Variaveis principais:
 - `JWT_ACCESS_EXPIRES_IN`
 - `JWT_REFRESH_EXPIRES_IN`
 - `BCRYPT_SALT_ROUNDS`
+- `AUTH_REFRESH_COOKIE_NAME`
+- `AUTH_REFRESH_COOKIE_MAX_AGE_MS`
+- `AUTH_REFRESH_COOKIE_SECURE`
+- `AUTH_REFRESH_COOKIE_SAME_SITE`
+- `AUTH_REFRESH_COOKIE_PATH`
 
 ## 10) Como rodar
 
@@ -212,6 +219,7 @@ Ja implementado:
 - base NestJS + Fastify
 - integracao Prisma + Postgres
 - autenticacao completa com refresh token e revogacao
+- refresh token em cookie httpOnly
 - rota protegida (`/auth/me`)
 - execucao dockerizada da stack completa
 

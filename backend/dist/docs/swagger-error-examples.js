@@ -40,26 +40,6 @@ exports.swaggerErrorExamples = {
             path: '/api/auth/login',
         },
     },
-    payloadInvalidoRefresh: {
-        summary: 'Payload invalido (refresh)',
-        value: {
-            statusCode: 400,
-            message: ['Refresh token deve ter no minimo 16 caracteres.'],
-            error: 'Requisicao invalida',
-            timestamp: '2026-04-17T03:40:12.000Z',
-            path: '/api/auth/refresh',
-        },
-    },
-    payloadInvalidoLogout: {
-        summary: 'Payload invalido (logout)',
-        value: {
-            statusCode: 400,
-            message: ['Refresh token deve ter no minimo 16 caracteres.'],
-            error: 'Requisicao invalida',
-            timestamp: '2026-04-17T03:40:12.000Z',
-            path: '/api/auth/logout',
-        },
-    },
     emailEmUso: {
         summary: 'Email ja cadastrado',
         value: {

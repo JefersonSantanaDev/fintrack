@@ -42,7 +42,6 @@ __decorate([
 class AuthResponseDto {
     user;
     accessToken;
-    refreshToken;
 }
 exports.AuthResponseDto = AuthResponseDto;
 __decorate([
@@ -59,13 +58,6 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], AuthResponseDto.prototype, "accessToken", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'JWT de refresh para renovar sessao.',
-        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh-token-payload.signature',
-    }),
-    __metadata("design:type", String)
-], AuthResponseDto.prototype, "refreshToken", void 0);
 class MeResponseDto {
     user;
 }

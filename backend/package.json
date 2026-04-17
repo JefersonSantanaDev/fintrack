@@ -23,6 +23,7 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
     "@fastify/static": "^9.1.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",

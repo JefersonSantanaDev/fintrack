@@ -11,8 +11,6 @@ import { randomUUID } from 'crypto';
 import type { StringValue } from 'ms';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
-import { LogoutDto } from './dto/logout.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginAttemptsService } from './login-attempts.service';
 import {
@@ -106,15 +104,15 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
-  async refresh(dto: RefreshTokenDto): Promise<AuthResponse> {
-    const payload = await this.verifyRefreshToken(dto.refreshToken);
+  async refresh(refreshToken: string): Promise<AuthResponse> {
+    const payload = await this.verifyRefreshToken(refreshToken);
     const storedToken = await this.findRefreshToken(payload);
 
     if (!storedToken) {
       throw new UnauthorizedException('Refresh token invalido ou expirado.');
     }
 
-    const hashMatch = await bcrypt.compare(dto.refreshToken, storedToken.tokenHash);
+    const hashMatch = await bcrypt.compare(refreshToken, storedToken.tokenHash);
 
     if (!hashMatch) {
       throw new UnauthorizedException('Refresh token invalido ou expirado.');
@@ -136,9 +134,13 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
-  async logout(dto: LogoutDto) {
+  async logout(refreshToken?: string) {
+    if (!refreshToken) {
+      return { success: true };
+    }
+
     try {
-      const payload = await this.verifyRefreshToken(dto.refreshToken);
+      const payload = await this.verifyRefreshToken(refreshToken);
 
       await this.prisma.refreshToken.updateMany({
         where: {

@@ -6,7 +6,6 @@ export declare class PublicUserDto {
 export declare class AuthResponseDto {
     user: PublicUserDto;
     accessToken: string;
-    refreshToken: string;
 }
 export declare class MeResponseDto {
     user: PublicUserDto;

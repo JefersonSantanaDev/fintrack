@@ -1,3 +1,9 @@
+import {
+  ApiRequestError,
+  apiRequest,
+  configureApiAuth,
+} from '@/shared/lib/api-client'
+
 export interface AuthUser {
   id: string
   name: string
@@ -18,187 +24,113 @@ export interface SignUpInput {
 interface AuthSuccessPayload {
   user: AuthUser
   accessToken: string
-  refreshToken: string
 }
 
-interface ApiErrorPayload {
-  message?: string | string[]
-}
-
-const ACCESS_TOKEN_STORAGE_KEY = 'fintrack-auth-access-token'
-const REFRESH_TOKEN_STORAGE_KEY = 'fintrack-auth-refresh-token'
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api'
-
-function isBrowser() {
-  return typeof window !== 'undefined'
-}
+const LEGACY_ACCESS_TOKEN_STORAGE_KEY = 'fintrack-auth-access-token'
+const LEGACY_REFRESH_TOKEN_STORAGE_KEY = 'fintrack-auth-refresh-token'
+let accessTokenInMemory: string | null = null
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
 }
 
+function clearLegacyTokenStorage() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.removeItem(LEGACY_ACCESS_TOKEN_STORAGE_KEY)
+  window.localStorage.removeItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY)
+}
+
 function readAccessToken() {
-  if (!isBrowser()) {
-    return null
-  }
-
-  return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)
+  return accessTokenInMemory
 }
 
-function readRefreshToken() {
-  if (!isBrowser()) {
-    return null
-  }
-
-  return window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+function saveAccessToken(accessToken: string) {
+  accessTokenInMemory = accessToken
 }
 
-function saveTokens(tokens: { accessToken: string; refreshToken: string }) {
-  if (!isBrowser()) {
-    return
-  }
-
-  window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, tokens.accessToken)
-  window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, tokens.refreshToken)
+function clearAccessToken() {
+  accessTokenInMemory = null
 }
 
-function clearTokens() {
-  if (!isBrowser()) {
-    return
+function shouldClearTokensAfterRefreshError(error: unknown) {
+  if (!(error instanceof ApiRequestError)) {
+    return false
   }
 
-  window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
-  window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
-}
-
-async function parseJsonSafe(response: Response) {
-  try {
-    return (await response.json()) as unknown
-  } catch {
-    return null
-  }
-}
-
-function resolveErrorMessage(payload: unknown, fallback: string) {
-  const data = payload as ApiErrorPayload | null
-
-  if (!data?.message) {
-    return fallback
-  }
-
-  if (Array.isArray(data.message)) {
-    return data.message.join(', ')
-  }
-
-  return data.message
-}
-
-async function requestApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'content-type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-    ...init,
-  })
-
-  const payload = await parseJsonSafe(response)
-
-  if (!response.ok) {
-    throw new Error(resolveErrorMessage(payload, 'Nao foi possivel concluir a operacao.'))
-  }
-
-  return payload as T
+  return error.statusCode === 400 || error.statusCode === 401 || error.statusCode === 403
 }
 
 async function refreshTokens() {
-  const refreshToken = readRefreshToken()
-
-  if (!refreshToken) {
-    return null
-  }
-
   try {
-    const payload = await requestApi<AuthSuccessPayload>('/auth/refresh', {
+    const payload = await apiRequest<AuthSuccessPayload>('/auth/refresh', {
       method: 'POST',
-      body: JSON.stringify({ refreshToken }),
+      errorMessage: 'Nao foi possivel renovar a sessao.',
+      retryOnUnauthorized: false,
     })
 
-    saveTokens({
-      accessToken: payload.accessToken,
-      refreshToken: payload.refreshToken,
-    })
+    saveAccessToken(payload.accessToken)
 
     return payload
-  } catch {
-    clearTokens()
+  } catch (error) {
+    if (shouldClearTokensAfterRefreshError(error)) {
+      clearAccessToken()
+    }
+
     return null
   }
 }
 
-async function meWithAccessToken(accessToken: string) {
-  const response = await fetch(`${API_BASE_URL}/auth/me`, {
-    headers: {
-      authorization: `Bearer ${accessToken}`,
-    },
-  })
+configureApiAuth({
+  getAccessToken: readAccessToken,
+  refreshAccessToken: async () => {
+    const refreshed = await refreshTokens()
+    return refreshed?.accessToken ?? null
+  },
+})
 
-  if (response.status === 401) {
-    return null
-  }
-
-  const payload = await parseJsonSafe(response)
-
-  if (!response.ok) {
-    throw new Error(resolveErrorMessage(payload, 'Nao foi possivel validar a sessao.'))
-  }
-
-  const data = payload as { user: AuthUser }
-  return data.user ?? null
-}
+clearLegacyTokenStorage()
 
 export async function getSessionUser() {
-  const accessToken = readAccessToken()
-
-  if (!accessToken) {
-    return null
+  if (!readAccessToken()) {
+    const refreshed = await refreshTokens()
+    return refreshed?.user ?? null
   }
 
   try {
-    const currentUser = await meWithAccessToken(accessToken)
-    if (currentUser) {
-      return currentUser
+    const payload = await apiRequest<{ user: AuthUser }>('/auth/me', {
+      auth: true,
+      errorMessage: 'Nao foi possivel validar a sessao.',
+    })
+    return payload.user ?? null
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      if (error.statusCode === 401 || error.statusCode === 403) {
+        return null
+      }
     }
-  } catch {
-    clearTokens()
+
     return null
   }
-
-  const refreshed = await refreshTokens()
-  if (!refreshed) {
-    return null
-  }
-
-  return refreshed.user
 }
 
 export async function loginWithEmailAndPassword(input: LoginInput) {
   const email = normalizeEmail(input.email)
-  const password = input.password.trim()
+  const password = input.password
 
   if (!email || !password) {
     throw new Error('Informe email e senha para entrar.')
   }
 
-  const payload = await requestApi<AuthSuccessPayload>('/auth/login', {
+  const payload = await apiRequest<AuthSuccessPayload>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
+    errorMessage: 'Nao foi possivel entrar.',
   })
 
-  saveTokens({
-    accessToken: payload.accessToken,
-    refreshToken: payload.refreshToken,
-  })
+  saveAccessToken(payload.accessToken)
 
   return payload.user
 }
@@ -206,7 +138,7 @@ export async function loginWithEmailAndPassword(input: LoginInput) {
 export async function signUpWithEmailAndPassword(input: SignUpInput) {
   const name = input.name.trim()
   const email = normalizeEmail(input.email)
-  const password = input.password.trim()
+  const password = input.password
 
   if (name.length < 2) {
     throw new Error('Informe um nome valido.')
@@ -220,32 +152,26 @@ export async function signUpWithEmailAndPassword(input: SignUpInput) {
     throw new Error('A senha deve ter pelo menos 6 caracteres.')
   }
 
-  const payload = await requestApi<AuthSuccessPayload>('/auth/signup', {
+  const payload = await apiRequest<AuthSuccessPayload>('/auth/signup', {
     method: 'POST',
     body: JSON.stringify({ name, email, password }),
+    errorMessage: 'Nao foi possivel criar a conta.',
   })
 
-  saveTokens({
-    accessToken: payload.accessToken,
-    refreshToken: payload.refreshToken,
-  })
+  saveAccessToken(payload.accessToken)
 
   return payload.user
 }
 
 export async function logoutSession() {
-  const refreshToken = readRefreshToken()
-
-  if (refreshToken) {
-    try {
-      await requestApi<{ success: boolean }>('/auth/logout', {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken }),
-      })
-    } catch {
-      // Logout deve sempre limpar estado local, mesmo em erro de rede.
-    }
+  try {
+    await apiRequest<{ success: boolean }>('/auth/logout', {
+      method: 'POST',
+      errorMessage: 'Nao foi possivel encerrar a sessao.',
+    })
+  } catch {
+    // Logout deve sempre limpar estado local, mesmo em erro de rede.
   }
 
-  clearTokens()
+  clearAccessToken()
 }

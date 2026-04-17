@@ -46,26 +46,6 @@ export declare const swaggerErrorExamples: {
             readonly path: "/api/auth/login";
         };
     };
-    readonly payloadInvalidoRefresh: {
-        readonly summary: "Payload invalido (refresh)";
-        readonly value: {
-            readonly statusCode: 400;
-            readonly message: readonly ["Refresh token deve ter no minimo 16 caracteres."];
-            readonly error: "Requisicao invalida";
-            readonly timestamp: "2026-04-17T03:40:12.000Z";
-            readonly path: "/api/auth/refresh";
-        };
-    };
-    readonly payloadInvalidoLogout: {
-        readonly summary: "Payload invalido (logout)";
-        readonly value: {
-            readonly statusCode: 400;
-            readonly message: readonly ["Refresh token deve ter no minimo 16 caracteres."];
-            readonly error: "Requisicao invalida";
-            readonly timestamp: "2026-04-17T03:40:12.000Z";
-            readonly path: "/api/auth/logout";
-        };
-    };
     readonly emailEmUso: {
         readonly summary: "Email ja cadastrado";
         readonly value: {

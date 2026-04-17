@@ -65,6 +65,10 @@ Base URL:
 
 `http://localhost:3000/api`
 
+Observacao importante:
+- O refresh token fica em cookie `httpOnly` (nao vem mais no JSON).
+- Em `curl`, use `-c` e `-b` para persistir e reenviar cookie.
+
 ### 4.1 Signup
 
 `POST /auth/signup`
@@ -79,7 +83,7 @@ Body:
 }
 ```
 
-Esperado: `201` com `user`, `accessToken`, `refreshToken`.
+Esperado: `201` com `user` e `accessToken`, mais `Set-Cookie` do refresh token.
 
 ### 4.2 Login
 
@@ -94,7 +98,7 @@ Body:
 }
 ```
 
-Esperado: `200` com `user`, `accessToken`, `refreshToken`.
+Esperado: `200` com `user` e `accessToken`, mais `Set-Cookie` do refresh token.
 
 ### 4.3 Me (rota protegida)
 
@@ -110,35 +114,23 @@ Esperado: `200` com dados de `user`.
 
 `POST /auth/refresh`
 
-Body:
+Sem body.
 
-```json
-{
-  "refreshToken": "<refreshToken>"
-}
-```
-
-Esperado: `200` com novo `accessToken` e novo `refreshToken`.
+Esperado: `200` com novo `accessToken` e novo `Set-Cookie` de refresh token.
 
 ### 4.5 Logout
 
 `POST /auth/logout`
 
-Body:
+Sem body.
 
-```json
-{
-  "refreshToken": "<refreshToken_mais_recente>"
-}
-```
-
-Esperado: `200` com `{ "success": true }`.
+Esperado: `200` com `{ "success": true }` e cookie expirado (`Max-Age=0`).
 
 ### 4.6 Validar token revogado
 
 Chame novamente:
 
-`POST /auth/refresh` com o token revogado.
+`POST /auth/refresh` com o cookie revogado.
 
 Esperado: `401` com erro de refresh token invalido/expirado.
 

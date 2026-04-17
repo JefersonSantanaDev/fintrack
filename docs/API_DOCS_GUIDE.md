@@ -80,6 +80,7 @@ Ponto forte:
 ```
 
 5. Copie `accessToken` da resposta.
+6. Confirme no response header que veio `Set-Cookie` com o refresh token (httpOnly).
 
 ### Testar endpoint protegido
 
@@ -91,6 +92,12 @@ Bearer SEU_ACCESS_TOKEN
 ```
 
 3. Execute `GET /api/auth/me`.
+
+### Testar refresh (cookie httpOnly)
+
+1. Depois de login/signup no Swagger, use o mesmo navegador/sessao.
+2. Execute `POST /api/auth/refresh` sem body.
+3. Valide `200` com novo `accessToken` e novo `Set-Cookie`.
 
 ## Docker e Ambiente
 

@@ -4,6 +4,7 @@ import {
   ValidationError,
   ValidationPipe,
 } from '@nestjs/common';
+import fastifyCookie from '@fastify/cookie';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
@@ -43,6 +44,7 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
+  await app.register(fastifyCookie);
 
   app.setGlobalPrefix('api');
 

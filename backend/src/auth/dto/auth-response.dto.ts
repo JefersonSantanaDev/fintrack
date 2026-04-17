@@ -34,13 +34,6 @@ export class AuthResponseDto {
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.access-token-payload.signature',
   })
   accessToken!: string;
-
-  @ApiProperty({
-    description: 'JWT de refresh para renovar sessao.',
-    example:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh-token-payload.signature',
-  })
-  refreshToken!: string;
 }
 
 export class MeResponseDto {

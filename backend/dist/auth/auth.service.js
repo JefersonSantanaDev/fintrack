@@ -103,13 +103,13 @@ let AuthService = class AuthService {
         this.loginAttemptsService.clearAttempts(email);
         return this.buildAuthResponse(user);
     }
-    async refresh(dto) {
-        const payload = await this.verifyRefreshToken(dto.refreshToken);
+    async refresh(refreshToken) {
+        const payload = await this.verifyRefreshToken(refreshToken);
         const storedToken = await this.findRefreshToken(payload);
         if (!storedToken) {
             throw new common_1.UnauthorizedException('Refresh token invalido ou expirado.');
         }
-        const hashMatch = await bcrypt.compare(dto.refreshToken, storedToken.tokenHash);
+        const hashMatch = await bcrypt.compare(refreshToken, storedToken.tokenHash);
         if (!hashMatch) {
             throw new common_1.UnauthorizedException('Refresh token invalido ou expirado.');
         }
@@ -125,9 +125,12 @@ let AuthService = class AuthService {
         }
         return this.buildAuthResponse(user);
     }
-    async logout(dto) {
+    async logout(refreshToken) {
+        if (!refreshToken) {
+            return { success: true };
+        }
         try {
-            const payload = await this.verifyRefreshToken(dto.refreshToken);
+            const payload = await this.verifyRefreshToken(refreshToken);
             await this.prisma.refreshToken.updateMany({
                 where: {
                     jti: payload.jti,

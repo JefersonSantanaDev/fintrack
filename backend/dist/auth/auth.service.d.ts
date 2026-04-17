@@ -2,8 +2,6 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
-import { LogoutDto } from './dto/logout.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginAttemptsService } from './login-attempts.service';
 export interface PublicUser {
@@ -29,8 +27,8 @@ export declare class AuthService {
     constructor(prisma: PrismaService, jwtService: JwtService, configService: ConfigService, loginAttemptsService: LoginAttemptsService);
     signUp(dto: SignUpDto): Promise<AuthResponse>;
     login(dto: LoginDto): Promise<AuthResponse>;
-    refresh(dto: RefreshTokenDto): Promise<AuthResponse>;
-    logout(dto: LogoutDto): Promise<{
+    refresh(refreshToken: string): Promise<AuthResponse>;
+    logout(refreshToken?: string): Promise<{
         success: boolean;
     }>;
     getProfile(userId: string): Promise<{

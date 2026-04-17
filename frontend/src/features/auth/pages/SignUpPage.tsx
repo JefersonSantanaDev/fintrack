@@ -47,9 +47,9 @@ export function SignUpPage() {
   })
   const nameRequiredError = touched.name && !name.trim() ? 'Preencha este campo.' : null
   const emailRequiredError = touched.email && !email.trim() ? 'Preencha este campo.' : null
-  const passwordRequiredError = touched.password && !password.trim() ? 'Preencha este campo.' : null
+  const passwordRequiredError = touched.password && !password ? 'Preencha este campo.' : null
   const confirmPasswordRequiredError =
-    touched.confirmPassword && !confirmPassword.trim() ? 'Preencha este campo.' : null
+    touched.confirmPassword && !confirmPassword ? 'Preencha este campo.' : null
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -61,10 +61,10 @@ export function SignUpPage() {
     })
     const normalizedName = name.trim()
     const normalizedEmail = email.trim()
-    const normalizedPassword = password.trim()
-    const normalizedConfirmPassword = confirmPassword.trim()
+    const rawPassword = password
+    const rawConfirmPassword = confirmPassword
 
-    if (!normalizedName || !normalizedEmail || !normalizedPassword || !normalizedConfirmPassword) {
+    if (!normalizedName || !normalizedEmail || !rawPassword || !rawConfirmPassword) {
       const message = 'Preencha nome, email e senha.'
       toast.error(message)
       return
@@ -76,20 +76,20 @@ export function SignUpPage() {
       return
     }
 
-    if (normalizedPassword.length < 6) {
+    if (rawPassword.length < 6) {
       const message = 'A senha precisa ter no minimo 6 caracteres.'
       toast.error(message)
       return
     }
 
-    if (normalizedPassword !== normalizedConfirmPassword) {
+    if (rawPassword !== rawConfirmPassword) {
       const message = 'As senhas precisam ser iguais.'
       toast.error(message)
       return
     }
 
     try {
-      await signUp({ name: normalizedName, email: normalizedEmail, password: normalizedPassword })
+      await signUp({ name: normalizedName, email: normalizedEmail, password: rawPassword })
       navigate(defaultAppPath, { replace: true })
     } catch (submitError) {
       const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel cadastrar.'

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -15,6 +15,7 @@ import {
 
 import { appPaths, defaultAppPath } from '@/app/paths'
 import { useAuth } from '@/features/auth/model/AuthProvider'
+import { ApiRequestError } from '@/shared/lib/api-client'
 import { FinTrackLogo } from '@/shared/branding/FinTrackLogo'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
@@ -30,6 +31,16 @@ interface LoginTouchedFields {
   password: boolean
 }
 
+function extractRetryInSeconds(message: string) {
+  const match = message.match(/(\d+)\s*s\b/i)
+  if (!match) {
+    return 60
+  }
+
+  const retryInSeconds = Number(match[1])
+  return Number.isFinite(retryInSeconds) && retryInSeconds > 0 ? retryInSeconds : 60
+}
+
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -39,19 +50,49 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [touched, setTouched] = useState<LoginTouchedFields>({ email: false, password: false })
+  const [rateLimitRetryInSeconds, setRateLimitRetryInSeconds] = useState(0)
+  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null)
 
   const fromState = location.state as FromState | null
   const nextPath = fromState?.from ?? defaultAppPath
   const emailRequiredError = touched.email && !email.trim() ? 'Preencha este campo.' : null
-  const passwordRequiredError = touched.password && !password.trim() ? 'Preencha este campo.' : null
+  const passwordRequiredError = touched.password && !password ? 'Preencha este campo.' : null
+  const isRateLimited = rateLimitRetryInSeconds > 0
+
+  useEffect(() => {
+    if (!isRateLimited) {
+      return
+    }
+
+    const intervalId = window.setInterval(() => {
+      setRateLimitRetryInSeconds(current => {
+        if (current <= 1) {
+          window.clearInterval(intervalId)
+          return 0
+        }
+
+        return current - 1
+      })
+    }, 1000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [isRateLimited])
+
+  useEffect(() => {
+    if (!isRateLimited && rateLimitMessage) {
+      setRateLimitMessage(null)
+    }
+  }, [isRateLimited, rateLimitMessage])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setTouched({ email: true, password: true })
     const normalizedEmail = email.trim()
-    const normalizedPassword = password.trim()
+    const rawPassword = password
 
-    if (!normalizedEmail || !normalizedPassword) {
+    if (!normalizedEmail || !rawPassword) {
       const message = 'Email e senha sao obrigatorios.'
       toast.error(message)
       return
@@ -63,10 +104,24 @@ export function LoginPage() {
       return
     }
 
+    if (isRateLimited) {
+      toast.error(`Aguarde ${rateLimitRetryInSeconds}s para tentar novamente.`)
+      return
+    }
+
     try {
-      await login({ email: normalizedEmail, password: normalizedPassword })
+      setRateLimitMessage(null)
+      await login({ email: normalizedEmail, password: rawPassword })
       navigate(nextPath, { replace: true })
     } catch (submitError) {
+      if (submitError instanceof ApiRequestError && submitError.statusCode === 429) {
+        const retryInSeconds = extractRetryInSeconds(submitError.message)
+        setRateLimitRetryInSeconds(retryInSeconds)
+        setRateLimitMessage(submitError.message)
+        toast.error(submitError.message)
+        return
+      }
+
       const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel entrar.'
       toast.error(message)
     }
@@ -215,10 +270,25 @@ export function LoginPage() {
                   ) : null}
                 </div>
 
-                <Button type="submit" className="h-11 w-full gap-2" disabled={isSubmitting}>
-                  {isSubmitting ? 'Entrando...' : 'Entrar agora'}
-                  {!isSubmitting ? <ArrowRight className="size-4" /> : null}
+                <Button type="submit" className="h-11 w-full gap-2" disabled={isSubmitting || isRateLimited}>
+                  {isSubmitting
+                    ? 'Entrando...'
+                    : isRateLimited
+                      ? `Tente novamente em ${rateLimitRetryInSeconds}s`
+                      : 'Entrar agora'}
+                  {!isSubmitting && !isRateLimited ? <ArrowRight className="size-4" /> : null}
                 </Button>
+                {rateLimitMessage ? (
+                  <p
+                    className="rounded-sm border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {isRateLimited
+                      ? `Muitas tentativas. Aguarde ${rateLimitRetryInSeconds}s para tentar novamente.`
+                      : rateLimitMessage}
+                  </p>
+                ) : null}
 
                 <p className="text-center text-sm text-muted-foreground">
                   Ainda nao tem conta?{' '}
