@@ -1,0 +1,128 @@
+# FinTrack API Docs Guide
+
+Guia rapido para entender quando usar cada interface de documentacao da API do FinTrack.
+
+## Endpoints
+
+- Swagger UI: `http://localhost:3000/api/docs`
+- OpenAPI JSON: `http://localhost:3000/api/docs-json`
+- ReDoc: `http://localhost:3000/api/redoc`
+- Scalar: `http://localhost:3000/api/scalar`
+
+## Para Que Serve Cada Um
+
+### 1. Swagger UI (`/api/docs`)
+
+Quando usar:
+- Testar endpoints manualmente.
+- Validar rapidamente payloads e respostas.
+- Fazer debug durante desenvolvimento.
+
+Ponto forte:
+- Melhor opcao para executar requests direto da interface.
+
+### 2. OpenAPI JSON (`/api/docs-json`)
+
+Quando usar:
+- Integrar com Postman, Insomnia, Bruno e ferramentas de codegen.
+- Versionar contrato de API.
+- Alimentar outras UIs de documentacao.
+
+Ponto forte:
+- Fonte unica de verdade do contrato da API.
+
+### 3. ReDoc (`/api/redoc`)
+
+Quando usar:
+- Leitura de documentacao mais limpa e sequencial.
+- Compartilhar com time de produto ou stakeholders.
+
+Ponto forte:
+- Visual mais focado em leitura, menos em teste interativo.
+
+### 4. Scalar (`/api/scalar`)
+
+Quando usar:
+- Navegacao moderna dos endpoints.
+- Inspecao de schemas e exemplos com UX mais atual.
+
+Ponto forte:
+- Boa experiencia visual e organizacao para explorar APIs maiores.
+
+## Fluxo Recomendado No Dia a Dia
+
+1. Desenvolvedor backend valida endpoint no Swagger.
+2. Frontend/QA consome o contrato pelo `/api/docs-json`.
+3. Produto/negocio consulta ReDoc ou Scalar para entendimento funcional.
+4. Em regressao, comparar comportamento no Swagger com o contrato OpenAPI JSON.
+
+## Como Usar Na Pratica
+
+### Testar login no Swagger
+
+1. Abra `/api/docs`.
+2. Va para `POST /api/auth/login`.
+3. Clique em `Try it out`.
+4. Envie:
+
+```json
+{
+  "email": "voce@exemplo.com",
+  "password": "123456"
+}
+```
+
+5. Copie `accessToken` da resposta.
+
+### Testar endpoint protegido
+
+1. Clique em `Authorize`.
+2. Informe:
+
+```text
+Bearer SEU_ACCESS_TOKEN
+```
+
+3. Execute `GET /api/auth/me`.
+
+## Docker e Ambiente
+
+Com `docker compose` ativo, as rotas acima ficam no host em `localhost:3000`.
+
+Se quiser desabilitar docs em ambiente sensivel:
+
+```bash
+API_DOCS_ENABLED=false
+```
+
+## Problemas Comuns
+
+### ReDoc em tela preta
+
+Causa comum:
+- Bloqueio do script CDN por extensao, politica de rede ou cache.
+
+Como validar:
+- Verifique se `/api/docs-json` abre normalmente.
+- Teste `/api/scalar` e `/api/docs`.
+- Tente aba anonima ou hard refresh.
+
+### Erro `Cannot find module '@nestjs/swagger'` no Docker
+
+Causa comum:
+- Container com `node_modules` antigo.
+
+Correcao:
+
+```bash
+docker compose stop backend
+docker compose rm -fsv backend
+docker compose up -d --build backend
+```
+
+## Resumo Curto
+
+- Quer testar endpoint rapido: use Swagger.
+- Quer integrar ferramenta ou gerar cliente: use OpenAPI JSON.
+- Quer leitura limpa para documentacao: use ReDoc.
+- Quer UX moderna para explorar API: use Scalar.

@@ -25,6 +25,24 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## API Documentation
+
+Com o backend rodando, a documentacao fica disponivel em:
+
+- Swagger UI: `http://localhost:3000/api/docs`
+- OpenAPI JSON: `http://localhost:3000/api/docs-json`
+- Redoc: `http://localhost:3000/api/redoc`
+- Scalar: `http://localhost:3000/api/scalar`
+
+Para desabilitar em ambiente sensivel/producao:
+
+```bash
+API_DOCS_ENABLED=false
+```
+
+Guia completo de uso:
+- [API Docs Guide](../docs/API_DOCS_GUIDE.md)
+
 ## Project setup
 
 ```bash
