@@ -69,7 +69,7 @@ export class AuthController {
   @ApiBadRequestResponse({
     description: 'Payload invalido.',
     content: apiValidationErrorContent({
-      payloadInvalido: swaggerErrorExamples.payloadInvalido,
+      payloadInvalidoSignUp: swaggerErrorExamples.payloadInvalidoSignUp,
     }),
   })
   @ApiTooManyRequestsResponse({
@@ -101,7 +101,7 @@ export class AuthController {
   @ApiBadRequestResponse({
     description: 'Payload invalido.',
     content: apiValidationErrorContent({
-      payloadInvalido: swaggerErrorExamples.payloadInvalido,
+      payloadInvalidoLogin: swaggerErrorExamples.payloadInvalidoLogin,
     }),
   })
   @ApiTooManyRequestsResponse({
@@ -132,7 +132,7 @@ export class AuthController {
   @ApiBadRequestResponse({
     description: 'Payload invalido.',
     content: apiValidationErrorContent({
-      payloadInvalido: swaggerErrorExamples.payloadInvalido,
+      payloadInvalidoRefresh: swaggerErrorExamples.payloadInvalidoRefresh,
     }),
   })
   @ApiTooManyRequestsResponse({
@@ -158,7 +158,7 @@ export class AuthController {
   @ApiBadRequestResponse({
     description: 'Payload invalido.',
     content: apiValidationErrorContent({
-      payloadInvalido: swaggerErrorExamples.payloadInvalido,
+      payloadInvalidoLogout: swaggerErrorExamples.payloadInvalidoLogout,
     }),
   })
   @ApiTooManyRequestsResponse({

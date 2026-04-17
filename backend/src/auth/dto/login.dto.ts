@@ -7,7 +7,7 @@ export class LoginDto {
     format: 'email',
     example: 'jeferson@fintrack.app',
   })
-  @IsEmail()
+  @IsEmail({}, { message: 'Email deve ser um email valido.' })
   email!: string;
 
   @ApiProperty({
@@ -15,7 +15,7 @@ export class LoginDto {
     minLength: 6,
     example: '123456',
   })
-  @IsString()
-  @MinLength(6)
+  @IsString({ message: 'Senha deve ser um texto valido.' })
+  @MinLength(6, { message: 'Senha deve ter no minimo 6 caracteres.' })
   password!: string;
 }

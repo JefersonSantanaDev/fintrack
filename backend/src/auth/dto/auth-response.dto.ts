@@ -74,9 +74,22 @@ export class ApiErrorResponseDto {
 
   @ApiProperty({
     description: 'Tipo de erro HTTP.',
-    example: 'Unauthorized',
+    example: 'Nao autorizado',
   })
   error!: string;
+
+  @ApiProperty({
+    description: 'Data e hora ISO do erro.',
+    format: 'date-time',
+    example: '2026-04-17T03:40:12.000Z',
+  })
+  timestamp!: string;
+
+  @ApiProperty({
+    description: 'Rota que originou o erro.',
+    example: '/api/auth/login',
+  })
+  path!: string;
 }
 
 export class ApiValidationErrorResponseDto {
@@ -89,13 +102,26 @@ export class ApiValidationErrorResponseDto {
   @ApiProperty({
     description: 'Lista de erros de validacao do payload.',
     type: [String],
-    example: ['email must be an email', 'password must be longer than or equal to 6 characters'],
+    example: ['Email deve ser um email valido.', 'Senha deve ter no minimo 6 caracteres.'],
   })
   message!: string[];
 
   @ApiProperty({
     description: 'Tipo de erro HTTP.',
-    example: 'Bad Request',
+    example: 'Requisicao invalida',
   })
   error!: string;
+
+  @ApiProperty({
+    description: 'Data e hora ISO do erro.',
+    format: 'date-time',
+    example: '2026-04-17T03:40:12.000Z',
+  })
+  timestamp!: string;
+
+  @ApiProperty({
+    description: 'Rota que originou o erro.',
+    example: '/api/auth/signup',
+  })
+  path!: string;
 }

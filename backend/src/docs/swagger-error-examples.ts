@@ -8,6 +8,8 @@ interface SwaggerExampleValue {
   statusCode: number;
   message: string | readonly string[];
   error: string;
+  timestamp: string;
+  path: string;
 }
 
 interface SwaggerExampleEntry {
@@ -35,12 +37,44 @@ export function apiValidationErrorContent(
 }
 
 export const swaggerErrorExamples = {
-  payloadInvalido: {
-    summary: 'Payload invalido',
+  payloadInvalidoSignUp: {
+    summary: 'Payload invalido (signup)',
     value: {
       statusCode: 400,
-      message: ['email must be an email', 'password must be longer than or equal to 6 characters'],
-      error: 'Bad Request',
+      message: ['Email deve ser um email valido.', 'Senha deve ter no minimo 6 caracteres.'],
+      error: 'Requisicao invalida',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/signup',
+    },
+  },
+  payloadInvalidoLogin: {
+    summary: 'Payload invalido (login)',
+    value: {
+      statusCode: 400,
+      message: ['Email deve ser um email valido.', 'Senha deve ter no minimo 6 caracteres.'],
+      error: 'Requisicao invalida',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/login',
+    },
+  },
+  payloadInvalidoRefresh: {
+    summary: 'Payload invalido (refresh)',
+    value: {
+      statusCode: 400,
+      message: ['Refresh token deve ter no minimo 16 caracteres.'],
+      error: 'Requisicao invalida',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/refresh',
+    },
+  },
+  payloadInvalidoLogout: {
+    summary: 'Payload invalido (logout)',
+    value: {
+      statusCode: 400,
+      message: ['Refresh token deve ter no minimo 16 caracteres.'],
+      error: 'Requisicao invalida',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/logout',
     },
   },
   emailEmUso: {
@@ -48,7 +82,9 @@ export const swaggerErrorExamples = {
     value: {
       statusCode: 409,
       message: 'Este email ja esta em uso.',
-      error: 'Conflict',
+      error: 'Conflito',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/signup',
     },
   },
   credenciaisInvalidas: {
@@ -56,39 +92,49 @@ export const swaggerErrorExamples = {
     value: {
       statusCode: 401,
       message: 'Email ou senha invalidos.',
-      error: 'Unauthorized',
+      error: 'Nao autorizado',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/login',
     },
   },
   refreshInvalido: {
-    summary: 'Refresh token invalido',
+    summary: 'Token de refresh invalido',
     value: {
       statusCode: 401,
       message: 'Refresh token invalido ou expirado.',
-      error: 'Unauthorized',
+      error: 'Nao autorizado',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/refresh',
     },
   },
   accessTokenInvalido: {
-    summary: 'Access token invalido',
+    summary: 'Token de acesso invalido',
     value: {
       statusCode: 401,
-      message: 'Unauthorized',
-      error: 'Unauthorized',
+      message: 'Nao autorizado.',
+      error: 'Nao autorizado',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/me',
     },
   },
   rateLimitAuth: {
-    summary: 'Rate limit de autenticacao',
+    summary: 'Limite de requisicoes de autenticacao',
     value: {
       statusCode: 429,
       message: 'Muitas tentativas de login. Tente novamente em 60s.',
-      error: 'Too Many Requests',
+      error: 'Muitas requisicoes',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/login',
     },
   },
   rateLimitRota: {
-    summary: 'Rate limit da rota',
+    summary: 'Limite de requisicoes da rota',
     value: {
       statusCode: 429,
-      message: 'ThrottlerException: Too Many Requests',
-      error: 'Too Many Requests',
+      message: 'Muitas requisicoes. Tente novamente em 60s.',
+      error: 'Muitas requisicoes',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/signup',
     },
   },
 } as const;

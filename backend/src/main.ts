@@ -1,8 +1,42 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  Logger,
+  ValidationError,
+  ValidationPipe,
+} from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { setupApiDocumentation } from './docs/api-docs';
+
+function translateValidationMessage(message: string) {
+  const nonWhitelistedMatch = message.match(/^property (.+) should not exist$/);
+  if (nonWhitelistedMatch) {
+    return `A propriedade "${nonWhitelistedMatch[1]}" nao e permitida.`;
+  }
+
+  return message;
+}
+
+function collectValidationMessages(
+  errors: ValidationError[],
+  bag: string[] = [],
+): string[] {
+  for (const error of errors) {
+    if (error.constraints) {
+      bag.push(
+        ...Object.values(error.constraints).map(translateValidationMessage),
+      );
+    }
+
+    if (error.children?.length) {
+      collectValidationMessages(error.children, bag);
+    }
+  }
+
+  return bag;
+}
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -17,8 +51,17 @@ async function bootstrap() {
       transform: true,
       whitelist: true,
       forbidNonWhitelisted: true,
+      exceptionFactory: (errors: ValidationError[]) => {
+        const messages = collectValidationMessages(errors);
+        return new BadRequestException({
+          statusCode: 400,
+          message: messages.length ? messages : ['Payload invalido.'],
+          error: 'Requisicao invalida',
+        });
+      },
     }),
   );
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   const frontendUrl = process.env.FRONTEND_URL;
 

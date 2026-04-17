@@ -92,6 +92,8 @@ class ApiErrorResponseDto {
     statusCode;
     message;
     error;
+    timestamp;
+    path;
 }
 exports.ApiErrorResponseDto = ApiErrorResponseDto;
 __decorate([
@@ -111,14 +113,31 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Tipo de erro HTTP.',
-        example: 'Unauthorized',
+        example: 'Nao autorizado',
     }),
     __metadata("design:type", String)
 ], ApiErrorResponseDto.prototype, "error", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data e hora ISO do erro.',
+        format: 'date-time',
+        example: '2026-04-17T03:40:12.000Z',
+    }),
+    __metadata("design:type", String)
+], ApiErrorResponseDto.prototype, "timestamp", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Rota que originou o erro.',
+        example: '/api/auth/login',
+    }),
+    __metadata("design:type", String)
+], ApiErrorResponseDto.prototype, "path", void 0);
 class ApiValidationErrorResponseDto {
     statusCode;
     message;
     error;
+    timestamp;
+    path;
 }
 exports.ApiValidationErrorResponseDto = ApiValidationErrorResponseDto;
 __decorate([
@@ -132,15 +151,30 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Lista de erros de validacao do payload.',
         type: [String],
-        example: ['email must be an email', 'password must be longer than or equal to 6 characters'],
+        example: ['Email deve ser um email valido.', 'Senha deve ter no minimo 6 caracteres.'],
     }),
     __metadata("design:type", Array)
 ], ApiValidationErrorResponseDto.prototype, "message", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Tipo de erro HTTP.',
-        example: 'Bad Request',
+        example: 'Requisicao invalida',
     }),
     __metadata("design:type", String)
 ], ApiValidationErrorResponseDto.prototype, "error", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data e hora ISO do erro.',
+        format: 'date-time',
+        example: '2026-04-17T03:40:12.000Z',
+    }),
+    __metadata("design:type", String)
+], ApiValidationErrorResponseDto.prototype, "timestamp", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Rota que originou o erro.',
+        example: '/api/auth/signup',
+    }),
+    __metadata("design:type", String)
+], ApiValidationErrorResponseDto.prototype, "path", void 0);
 //# sourceMappingURL=auth-response.dto.js.map

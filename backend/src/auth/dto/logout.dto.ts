@@ -8,7 +8,7 @@ export class LogoutDto {
     example:
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh-token-payload.signature',
   })
-  @IsString()
-  @MinLength(16)
+  @IsString({ message: 'Refresh token deve ser um texto valido.' })
+  @MinLength(16, { message: 'Refresh token deve ter no minimo 16 caracteres.' })
   refreshToken!: string;
 }

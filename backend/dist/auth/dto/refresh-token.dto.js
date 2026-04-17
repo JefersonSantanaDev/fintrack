@@ -22,8 +22,8 @@ __decorate([
         minLength: 16,
         example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh-token-payload.signature',
     }),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(16),
+    (0, class_validator_1.IsString)({ message: 'Refresh token deve ser um texto valido.' }),
+    (0, class_validator_1.MinLength)(16, { message: 'Refresh token deve ter no minimo 16 caracteres.' }),
     __metadata("design:type", String)
 ], RefreshTokenDto.prototype, "refreshToken", void 0);
 //# sourceMappingURL=refresh-token.dto.js.map

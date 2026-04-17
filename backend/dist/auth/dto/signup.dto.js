@@ -25,9 +25,9 @@ __decorate([
         maxLength: 80,
         example: 'Jeferson Santana',
     }),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(2),
-    (0, class_validator_1.MaxLength)(80),
+    (0, class_validator_1.IsString)({ message: 'Nome deve ser um texto valido.' }),
+    (0, class_validator_1.MinLength)(2, { message: 'Nome deve ter no minimo 2 caracteres.' }),
+    (0, class_validator_1.MaxLength)(80, { message: 'Nome deve ter no maximo 80 caracteres.' }),
     __metadata("design:type", String)
 ], SignUpDto.prototype, "name", void 0);
 __decorate([
@@ -36,7 +36,7 @@ __decorate([
         format: 'email',
         example: 'jeferson@fintrack.app',
     }),
-    (0, class_validator_1.IsEmail)(),
+    (0, class_validator_1.IsEmail)({}, { message: 'Email deve ser um email valido.' }),
     __metadata("design:type", String)
 ], SignUpDto.prototype, "email", void 0);
 __decorate([
@@ -46,9 +46,9 @@ __decorate([
         maxLength: 72,
         example: '123456',
     }),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(6),
-    (0, class_validator_1.MaxLength)(72),
+    (0, class_validator_1.IsString)({ message: 'Senha deve ser um texto valido.' }),
+    (0, class_validator_1.MinLength)(6, { message: 'Senha deve ter no minimo 6 caracteres.' }),
+    (0, class_validator_1.MaxLength)(72, { message: 'Senha deve ter no maximo 72 caracteres.' }),
     __metadata("design:type", String)
 ], SignUpDto.prototype, "password", void 0);
 //# sourceMappingURL=signup.dto.js.map

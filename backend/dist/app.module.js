@@ -22,14 +22,20 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
-            throttler_1.ThrottlerModule.forRoot([
-                {
-                    name: 'default',
-                    ttl: 60_000,
-                    limit: 120,
-                    blockDuration: 60_000,
+            throttler_1.ThrottlerModule.forRoot({
+                errorMessage: (_context, throttlerLimitDetail) => {
+                    const retryInSeconds = Math.max(throttlerLimitDetail.timeToBlockExpire ?? 0, throttlerLimitDetail.timeToExpire ?? 0, 1);
+                    return `Muitas requisicoes. Tente novamente em ${retryInSeconds}s.`;
                 },
-            ]),
+                throttlers: [
+                    {
+                        name: 'default',
+                        ttl: 60_000,
+                        limit: 120,
+                        blockDuration: 60_000,
+                    },
+                ],
+            }),
             prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
         ],

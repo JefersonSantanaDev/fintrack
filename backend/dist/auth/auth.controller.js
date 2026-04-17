@@ -68,7 +68,7 @@ __decorate([
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Payload invalido.',
         content: (0, swagger_error_examples_1.apiValidationErrorContent)({
-            payloadInvalido: swagger_error_examples_1.swaggerErrorExamples.payloadInvalido,
+            payloadInvalidoSignUp: swagger_error_examples_1.swaggerErrorExamples.payloadInvalidoSignUp,
         }),
     }),
     (0, swagger_1.ApiTooManyRequestsResponse)({
@@ -102,7 +102,7 @@ __decorate([
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Payload invalido.',
         content: (0, swagger_error_examples_1.apiValidationErrorContent)({
-            payloadInvalido: swagger_error_examples_1.swaggerErrorExamples.payloadInvalido,
+            payloadInvalidoLogin: swagger_error_examples_1.swaggerErrorExamples.payloadInvalidoLogin,
         }),
     }),
     (0, swagger_1.ApiTooManyRequestsResponse)({
@@ -134,7 +134,7 @@ __decorate([
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Payload invalido.',
         content: (0, swagger_error_examples_1.apiValidationErrorContent)({
-            payloadInvalido: swagger_error_examples_1.swaggerErrorExamples.payloadInvalido,
+            payloadInvalidoRefresh: swagger_error_examples_1.swaggerErrorExamples.payloadInvalidoRefresh,
         }),
     }),
     (0, swagger_1.ApiTooManyRequestsResponse)({
@@ -162,7 +162,7 @@ __decorate([
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Payload invalido.',
         content: (0, swagger_error_examples_1.apiValidationErrorContent)({
-            payloadInvalido: swagger_error_examples_1.swaggerErrorExamples.payloadInvalido,
+            payloadInvalidoLogout: swagger_error_examples_1.swaggerErrorExamples.payloadInvalidoLogout,
         }),
     }),
     (0, swagger_1.ApiTooManyRequestsResponse)({

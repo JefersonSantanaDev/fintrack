@@ -18,9 +18,13 @@ export declare class ApiErrorResponseDto {
     statusCode: number;
     message: string;
     error: string;
+    timestamp: string;
+    path: string;
 }
 export declare class ApiValidationErrorResponseDto {
     statusCode: number;
     message: string[];
     error: string;
+    timestamp: string;
+    path: string;
 }

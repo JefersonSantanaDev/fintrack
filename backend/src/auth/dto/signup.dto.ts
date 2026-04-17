@@ -8,9 +8,9 @@ export class SignUpDto {
     maxLength: 80,
     example: 'Jeferson Santana',
   })
-  @IsString()
-  @MinLength(2)
-  @MaxLength(80)
+  @IsString({ message: 'Nome deve ser um texto valido.' })
+  @MinLength(2, { message: 'Nome deve ter no minimo 2 caracteres.' })
+  @MaxLength(80, { message: 'Nome deve ter no maximo 80 caracteres.' })
   name!: string;
 
   @ApiProperty({
@@ -18,7 +18,7 @@ export class SignUpDto {
     format: 'email',
     example: 'jeferson@fintrack.app',
   })
-  @IsEmail()
+  @IsEmail({}, { message: 'Email deve ser um email valido.' })
   email!: string;
 
   @ApiProperty({
@@ -27,8 +27,8 @@ export class SignUpDto {
     maxLength: 72,
     example: '123456',
   })
-  @IsString()
-  @MinLength(6)
-  @MaxLength(72)
+  @IsString({ message: 'Senha deve ser um texto valido.' })
+  @MinLength(6, { message: 'Senha deve ter no minimo 6 caracteres.' })
+  @MaxLength(72, { message: 'Senha deve ter no maximo 72 caracteres.' })
   password!: string;
 }

@@ -23,7 +23,7 @@ __decorate([
         format: 'email',
         example: 'jeferson@fintrack.app',
     }),
-    (0, class_validator_1.IsEmail)(),
+    (0, class_validator_1.IsEmail)({}, { message: 'Email deve ser um email valido.' }),
     __metadata("design:type", String)
 ], LoginDto.prototype, "email", void 0);
 __decorate([
@@ -32,8 +32,8 @@ __decorate([
         minLength: 6,
         example: '123456',
     }),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(6),
+    (0, class_validator_1.IsString)({ message: 'Senha deve ser um texto valido.' }),
+    (0, class_validator_1.MinLength)(6, { message: 'Senha deve ter no minimo 6 caracteres.' }),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
 //# sourceMappingURL=login.dto.js.map

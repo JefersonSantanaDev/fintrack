@@ -10,14 +10,24 @@ import { AppService } from './app.service';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: 60_000,
-        limit: 120,
-        blockDuration: 60_000,
+    ThrottlerModule.forRoot({
+      errorMessage: (_context, throttlerLimitDetail) => {
+        const retryInSeconds = Math.max(
+          throttlerLimitDetail.timeToBlockExpire ?? 0,
+          throttlerLimitDetail.timeToExpire ?? 0,
+          1,
+        );
+        return `Muitas requisicoes. Tente novamente em ${retryInSeconds}s.`;
       },
-    ]),
+      throttlers: [
+        {
+          name: 'default',
+          ttl: 60_000,
+          limit: 120,
+          blockDuration: 60_000,
+        },
+      ],
+    }),
     PrismaModule,
     AuthModule,
   ],
