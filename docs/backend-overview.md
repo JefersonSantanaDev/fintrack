@@ -57,7 +57,9 @@ Health:
 
 Auth:
 
-- `POST /auth/signup`
+- `POST /auth/signup/start`
+- `POST /auth/signup/verify`
+- `POST /auth/signup/resend`
 - `POST /auth/login`
 - `POST /auth/refresh`
 - `POST /auth/logout`
@@ -65,15 +67,15 @@ Auth:
 
 ## 6) Fluxo de autenticacao
 
-### Signup
+### Signup em 2 etapas
 
-1. valida entrada (`SignUpDto`);
+1. `POST /auth/signup/start` valida entrada (`SignUpDto`);
 2. normaliza email;
 3. verifica se ja existe usuario;
-4. hash da senha com bcrypt;
-5. cria usuario;
-6. gera access token e refresh token;
-7. salva hash do refresh token no banco.
+4. gera codigo numerico e salva hash do codigo + hash da senha em `signup_verifications`;
+5. envia codigo de verificacao por email;
+6. `POST /auth/signup/verify` valida codigo;
+7. cria usuario e inicia sessao (access token + refresh token em cookie).
 
 ### Login
 
@@ -125,6 +127,7 @@ Tabelas do MVP:
 
 - `users`
 - `refresh_tokens`
+- `signup_verifications`
 
 Pontos importantes:
 
@@ -152,11 +155,23 @@ Variaveis principais:
 - `JWT_ACCESS_EXPIRES_IN`
 - `JWT_REFRESH_EXPIRES_IN`
 - `BCRYPT_SALT_ROUNDS`
+- `AUTH_SIGNUP_CODE_TTL_MS`
+- `AUTH_SIGNUP_CODE_RESEND_COOLDOWN_MS`
+- `AUTH_SIGNUP_CODE_MAX_ATTEMPTS`
+- `AUTH_SIGNUP_CODE_LOCK_DURATION_MS`
+- `AUTH_SIGNUP_CODE_LENGTH`
+- `AUTH_SIGNUP_LOG_CODE`
 - `AUTH_REFRESH_COOKIE_NAME`
 - `AUTH_REFRESH_COOKIE_MAX_AGE_MS`
 - `AUTH_REFRESH_COOKIE_SECURE`
 - `AUTH_REFRESH_COOKIE_SAME_SITE`
 - `AUTH_REFRESH_COOKIE_PATH`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SMTP_FROM`
 
 ## 10) Como rodar
 

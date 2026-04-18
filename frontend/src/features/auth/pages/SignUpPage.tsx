@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -16,85 +16,246 @@ import {
 
 import { appPaths, defaultAppPath } from '@/app/paths'
 import { useAuth } from '@/features/auth/model/AuthProvider'
+import { ApiRequestError } from '@/shared/lib/api-client'
 import { FinTrackLogo } from '@/shared/branding/FinTrackLogo'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 
+type SignUpStep = 'start' | 'verify'
+
 interface SignUpTouchedFields {
   name: boolean
   email: boolean
   password: boolean
   confirmPassword: boolean
+  verificationCode: boolean
+}
+
+function extractRetryInSeconds(message: string) {
+  const match = message.match(/(\d+)\s*s\b/i)
+  if (!match) {
+    return 60
+  }
+
+  const retryInSeconds = Number(match[1])
+  return Number.isFinite(retryInSeconds) && retryInSeconds > 0 ? retryInSeconds : 60
+}
+
+function formatCountdown(seconds: number) {
+  if (seconds <= 0) {
+    return '0s'
+  }
+
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+
+  if (minutes === 0) {
+    return `${remainingSeconds}s`
+  }
+
+  if (remainingSeconds === 0) {
+    return `${minutes}min`
+  }
+
+  return `${minutes}min ${remainingSeconds}s`
 }
 
 export function SignUpPage() {
   const navigate = useNavigate()
-  const { signUp, isSubmitting } = useAuth()
+  const { startSignUp, verifySignUp, resendSignUpCode, isSubmitting } = useAuth()
 
+  const [step, setStep] = useState<SignUpStep>('start')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [verificationCode, setVerificationCode] = useState('')
+  const [pendingEmail, setPendingEmail] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [resendRetryInSeconds, setResendRetryInSeconds] = useState(0)
+  const [codeExpiresInSeconds, setCodeExpiresInSeconds] = useState(0)
   const [touched, setTouched] = useState<SignUpTouchedFields>({
     name: false,
     email: false,
     password: false,
     confirmPassword: false,
+    verificationCode: false,
   })
+
   const nameRequiredError = touched.name && !name.trim() ? 'Preencha este campo.' : null
   const emailRequiredError = touched.email && !email.trim() ? 'Preencha este campo.' : null
   const passwordRequiredError = touched.password && !password ? 'Preencha este campo.' : null
   const confirmPasswordRequiredError =
     touched.confirmPassword && !confirmPassword ? 'Preencha este campo.' : null
+  const verificationCodeError =
+    touched.verificationCode && !/^\d{6}$/.test(verificationCode.trim())
+      ? 'Digite os 6 digitos do codigo.'
+      : null
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (resendRetryInSeconds <= 0) {
+      return
+    }
+
+    const intervalId = window.setInterval(() => {
+      setResendRetryInSeconds(current => {
+        if (current <= 1) {
+          window.clearInterval(intervalId)
+          return 0
+        }
+
+        return current - 1
+      })
+    }, 1000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [resendRetryInSeconds])
+
+  useEffect(() => {
+    if (codeExpiresInSeconds <= 0) {
+      return
+    }
+
+    const intervalId = window.setInterval(() => {
+      setCodeExpiresInSeconds(current => {
+        if (current <= 1) {
+          window.clearInterval(intervalId)
+          return 0
+        }
+
+        return current - 1
+      })
+    }, 1000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [codeExpiresInSeconds])
+
+  const handleStartSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setTouched({
+    setTouched(prev => ({
+      ...prev,
       name: true,
       email: true,
       password: true,
       confirmPassword: true,
-    })
+    }))
+
     const normalizedName = name.trim()
     const normalizedEmail = email.trim()
     const rawPassword = password
     const rawConfirmPassword = confirmPassword
 
     if (!normalizedName || !normalizedEmail || !rawPassword || !rawConfirmPassword) {
-      const message = 'Preencha nome, email e senha.'
-      toast.error(message)
+      toast.error('Preencha nome, email e senha.')
       return
     }
 
     if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
-      const message = 'Informe um email valido.'
-      toast.error(message)
+      toast.error('Informe um email valido.')
       return
     }
 
     if (rawPassword.length < 6) {
-      const message = 'A senha precisa ter no minimo 6 caracteres.'
-      toast.error(message)
+      toast.error('A senha precisa ter no minimo 6 caracteres.')
       return
     }
 
     if (rawPassword !== rawConfirmPassword) {
-      const message = 'As senhas precisam ser iguais.'
-      toast.error(message)
+      toast.error('As senhas precisam ser iguais.')
       return
     }
 
     try {
-      await signUp({ name: normalizedName, email: normalizedEmail, password: rawPassword })
-      navigate(defaultAppPath, { replace: true })
+      const challenge = await startSignUp({
+        name: normalizedName,
+        email: normalizedEmail,
+        password: rawPassword,
+      })
+      setPendingEmail(challenge.email)
+      setStep('verify')
+      setVerificationCode('')
+      setTouched(prev => ({ ...prev, verificationCode: false }))
+      setResendRetryInSeconds(challenge.resendAvailableInSeconds)
+      setCodeExpiresInSeconds(challenge.expiresInSeconds)
+      toast.success(challenge.message)
     } catch (submitError) {
-      const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel cadastrar.'
+      if (submitError instanceof ApiRequestError && submitError.statusCode === 429) {
+        const retryInSeconds = extractRetryInSeconds(submitError.message)
+        setResendRetryInSeconds(retryInSeconds)
+      }
+
+      const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel iniciar cadastro.'
       toast.error(message)
     }
+  }
+
+  const handleVerifySubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setTouched(prev => ({ ...prev, verificationCode: true }))
+
+    const code = verificationCode.trim()
+
+    if (!/^\d{6}$/.test(code)) {
+      toast.error('Digite o codigo de 6 digitos.')
+      return
+    }
+
+    try {
+      await verifySignUp({ email: pendingEmail, code })
+      toast.success('Conta verificada com sucesso.')
+      navigate(defaultAppPath, { replace: true })
+    } catch (submitError) {
+      if (submitError instanceof ApiRequestError && submitError.statusCode === 429) {
+        const retryInSeconds = extractRetryInSeconds(submitError.message)
+        setResendRetryInSeconds(current => (current > retryInSeconds ? current : retryInSeconds))
+      }
+
+      const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel verificar o codigo.'
+      toast.error(message)
+    }
+  }
+
+  const handleResendCode = async () => {
+    if (!pendingEmail) {
+      toast.error('Informe o email para reenviar o codigo.')
+      return
+    }
+
+    if (resendRetryInSeconds > 0) {
+      toast.error(`Aguarde ${resendRetryInSeconds}s para reenviar.`)
+      return
+    }
+
+    try {
+      const challenge = await resendSignUpCode(pendingEmail)
+      setResendRetryInSeconds(challenge.resendAvailableInSeconds)
+      setCodeExpiresInSeconds(challenge.expiresInSeconds)
+      toast.success(challenge.message)
+    } catch (submitError) {
+      if (submitError instanceof ApiRequestError && submitError.statusCode === 429) {
+        const retryInSeconds = extractRetryInSeconds(submitError.message)
+        setResendRetryInSeconds(retryInSeconds)
+      }
+
+      const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel reenviar o codigo.'
+      toast.error(message)
+    }
+  }
+
+  const moveBackToStart = () => {
+    setStep('start')
+    setPendingEmail('')
+    setVerificationCode('')
+    setResendRetryInSeconds(0)
+    setCodeExpiresInSeconds(0)
+    setTouched(prev => ({ ...prev, verificationCode: false }))
   }
 
   return (
@@ -129,17 +290,17 @@ export function SignUpPage() {
                       { label: 'Planejamento mensal', value: 82 },
                       { label: 'Controle de gastos', value: 74 },
                       { label: 'Reserva financeira', value: 68 },
-                    ].map((step, index) => (
-                      <div key={step.label} className="space-y-1">
+                    ].map((stepItem, index) => (
+                      <div key={stepItem.label} className="space-y-1">
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span>{step.label}</span>
-                          <span>{step.value}%</span>
+                          <span>{stepItem.label}</span>
+                          <span>{stepItem.value}%</span>
                         </div>
                         <div className="h-1.5 rounded-full bg-muted">
                           <motion.div
                             className="h-1.5 rounded-full bg-primary"
                             initial={{ width: '12%' }}
-                            animate={{ width: `${step.value}%` }}
+                            animate={{ width: `${stepItem.value}%` }}
                             transition={{
                               delay: index * 0.12,
                               duration: 1,
@@ -178,132 +339,208 @@ export function SignUpPage() {
               <div className="space-y-6">
                 <FinTrackLogo />
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-bold tracking-tight">Criar sua conta</h2>
+                  <h2 className="text-3xl font-bold tracking-tight">
+                    {step === 'start' ? 'Criar sua conta' : 'Verificar cadastro'}
+                  </h2>
                   <p className="text-sm text-muted-foreground">
-                    Configure seu acesso para organizar as financas da familia em um painel unico.
+                    {step === 'start'
+                      ? 'Primeiro enviamos um codigo para confirmar seu email com seguranca.'
+                      : `Digite o codigo enviado para ${pendingEmail}.`}
                   </p>
                 </div>
               </div>
 
-              <form className="space-y-5" onSubmit={handleSubmit} noValidate>
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome</Label>
-                  <div className="relative">
-                    <UserRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="name"
-                      type="text"
-                      value={name}
-                      onChange={event => { setName(event.target.value); setTouched(prev => ({ ...prev, name: true })) }}
-                      onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
-                      autoComplete="name"
-                      placeholder="Seu nome"
-                      className="h-11 pl-9"
-                      aria-invalid={nameRequiredError ? 'true' : 'false'}
-                    />
+              {step === 'start' ? (
+                <form className="space-y-5" onSubmit={handleStartSubmit} noValidate>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome</Label>
+                    <div className="relative">
+                      <UserRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="name"
+                        type="text"
+                        value={name}
+                        onChange={event => {
+                          setName(event.target.value)
+                          setTouched(prev => ({ ...prev, name: true }))
+                        }}
+                        onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
+                        autoComplete="name"
+                        placeholder="Seu nome"
+                        className="h-11 pl-9"
+                        aria-invalid={nameRequiredError ? 'true' : 'false'}
+                      />
+                    </div>
+                    {nameRequiredError ? <p className="text-xs text-destructive">{nameRequiredError}</p> : null}
                   </div>
-                  {nameRequiredError ? <p className="text-xs text-destructive">{nameRequiredError}</p> : null}
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={event => { setEmail(event.target.value); setTouched(prev => ({ ...prev, email: true })) }}
-                      onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
-                      autoComplete="email"
-                      placeholder="voce@exemplo.com"
-                      className="h-11 pl-9"
-                      aria-invalid={emailRequiredError ? 'true' : 'false'}
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={event => {
+                          setEmail(event.target.value)
+                          setTouched(prev => ({ ...prev, email: true }))
+                        }}
+                        onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
+                        autoComplete="email"
+                        placeholder="voce@exemplo.com"
+                        className="h-11 pl-9"
+                        aria-invalid={emailRequiredError ? 'true' : 'false'}
+                      />
+                    </div>
+                    {emailRequiredError ? (
+                      <p className="text-xs text-destructive">{emailRequiredError}</p>
+                    ) : null}
                   </div>
-                  {emailRequiredError ? (
-                    <p className="text-xs text-destructive">{emailRequiredError}</p>
-                  ) : null}
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <div className="relative">
-                    <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={event => { setPassword(event.target.value); setTouched(prev => ({ ...prev, password: true })) }}
-                      onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
-                      autoComplete="new-password"
-                      placeholder="No minimo 6 caracteres"
-                      className="h-11 pl-9 pr-10"
-                      aria-invalid={passwordRequiredError ? 'true' : 'false'}
-                    />
-                    <button
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Senha</Label>
+                    <div className="relative">
+                      <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={event => {
+                          setPassword(event.target.value)
+                          setTouched(prev => ({ ...prev, password: true }))
+                        }}
+                        onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
+                        autoComplete="new-password"
+                        placeholder="No minimo 6 caracteres"
+                        className="h-11 pl-9 pr-10"
+                        aria-invalid={passwordRequiredError ? 'true' : 'false'}
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                        onClick={() => setShowPassword(current => !current)}
+                        aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
+                    {passwordRequiredError ? (
+                      <p className="text-xs text-destructive">{passwordRequiredError}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirmar senha</Label>
+                    <div className="relative">
+                      <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={event => {
+                          setConfirmPassword(event.target.value)
+                          setTouched(prev => ({ ...prev, confirmPassword: true }))
+                        }}
+                        onBlur={() => setTouched(prev => ({ ...prev, confirmPassword: true }))}
+                        autoComplete="new-password"
+                        placeholder="Repita a senha"
+                        className="h-11 pl-9 pr-10"
+                        aria-invalid={confirmPasswordRequiredError ? 'true' : 'false'}
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                        onClick={() => setShowConfirmPassword(current => !current)}
+                        aria-label={showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      >
+                        {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
+                    {confirmPasswordRequiredError ? (
+                      <p className="text-xs text-destructive">{confirmPasswordRequiredError}</p>
+                    ) : null}
+                  </div>
+
+                  <Button type="submit" className="h-11 w-full gap-2" disabled={isSubmitting}>
+                    {isSubmitting ? 'Enviando codigo...' : 'Continuar'}
+                    {!isSubmitting ? <ArrowRight className="size-4" /> : null}
+                  </Button>
+
+                  <p className="text-center text-sm text-muted-foreground">
+                    Ja tem conta?{' '}
+                    <Link className="font-semibold text-foreground hover:text-primary hover:underline" to={appPaths.login}>
+                      Entrar
+                    </Link>
+                  </p>
+                </form>
+              ) : (
+                <form className="space-y-5" onSubmit={handleVerifySubmit} noValidate>
+                  <div className="space-y-2">
+                    <Label htmlFor="verificationCode">Codigo de verificacao</Label>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="verificationCode"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        placeholder="000000"
+                        maxLength={6}
+                        value={verificationCode}
+                        onChange={event => {
+                          const numericValue = event.target.value.replace(/\D/g, '').slice(0, 6)
+                          setVerificationCode(numericValue)
+                          setTouched(prev => ({ ...prev, verificationCode: true }))
+                        }}
+                        onBlur={() => setTouched(prev => ({ ...prev, verificationCode: true }))}
+                        className="h-11 pl-9 tracking-[0.24em]"
+                        aria-invalid={verificationCodeError ? 'true' : 'false'}
+                      />
+                    </div>
+                    {verificationCodeError ? (
+                      <p className="text-xs text-destructive">{verificationCodeError}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="space-y-2 rounded-sm border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+                    <p>Codigo expira em: {formatCountdown(codeExpiresInSeconds)}</p>
+                    <p>
+                      Reenvio disponivel em:{' '}
+                      {resendRetryInSeconds > 0 ? formatCountdown(resendRetryInSeconds) : 'agora'}
+                    </p>
+                  </div>
+
+                  <Button type="submit" className="h-11 w-full gap-2" disabled={isSubmitting}>
+                    {isSubmitting ? 'Verificando...' : 'Finalizar cadastro'}
+                    {!isSubmitting ? <ArrowRight className="size-4" /> : null}
+                  </Button>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <Button type="button" variant="ghost" className="h-10 px-0" onClick={moveBackToStart}>
+                      Alterar dados
+                    </Button>
+                    <Button
                       type="button"
-                      className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
-                      onClick={() => setShowPassword(current => !current)}
-                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      variant="outline"
+                      className="h-10"
+                      onClick={handleResendCode}
+                      disabled={isSubmitting || resendRetryInSeconds > 0}
                     >
-                      {showPassword ? (
-                        <EyeOff className="size-4" />
-                      ) : (
-                        <Eye className="size-4" />
-                      )}
-                    </button>
+                      {resendRetryInSeconds > 0
+                        ? `Reenviar em ${formatCountdown(resendRetryInSeconds)}`
+                        : 'Reenviar codigo'}
+                    </Button>
                   </div>
-                  {passwordRequiredError ? (
-                    <p className="text-xs text-destructive">{passwordRequiredError}</p>
-                  ) : null}
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmar senha</Label>
-                  <div className="relative">
-                    <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={confirmPassword}
-                      onChange={event => { setConfirmPassword(event.target.value); setTouched(prev => ({ ...prev, confirmPassword: true })) }}
-                      onBlur={() => setTouched(prev => ({ ...prev, confirmPassword: true }))}
-                      autoComplete="new-password"
-                      placeholder="Repita a senha"
-                      className="h-11 pl-9 pr-10"
-                      aria-invalid={confirmPasswordRequiredError ? 'true' : 'false'}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
-                      onClick={() => setShowConfirmPassword(current => !current)}
-                      aria-label={showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="size-4" />
-                      ) : (
-                        <Eye className="size-4" />
-                      )}
-                    </button>
-                  </div>
-                  {confirmPasswordRequiredError ? (
-                    <p className="text-xs text-destructive">{confirmPasswordRequiredError}</p>
-                  ) : null}
-                </div>
-
-                <Button type="submit" className="h-11 w-full gap-2" disabled={isSubmitting}>
-                  {isSubmitting ? 'Criando conta...' : 'Criar conta'}
-                  {!isSubmitting ? <ArrowRight className="size-4" /> : null}
-                </Button>
-
-                <p className="text-center text-sm text-muted-foreground">
-                  Ja tem conta?{' '}
-                  <Link className="font-semibold text-foreground hover:text-primary hover:underline" to={appPaths.login}>
-                    Entrar
-                  </Link>
-                </p>
-              </form>
+                  <p className="text-center text-sm text-muted-foreground">
+                    Ja tem conta?{' '}
+                    <Link className="font-semibold text-foreground hover:text-primary hover:underline" to={appPaths.login}>
+                      Entrar
+                    </Link>
+                  </p>
+                </form>
+              )}
             </div>
           </section>
         </div>

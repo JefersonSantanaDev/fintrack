@@ -1,7 +1,9 @@
 import { ConfigService } from '@nestjs/config';
-import { AuthResponseDto, LogoutResponseDto, MeResponseDto } from './dto/auth-response.dto';
+import { AuthResponseDto, LogoutResponseDto, MeResponseDto, SignUpChallengeResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
+import { SignUpResendDto } from './dto/signup-resend.dto';
 import { SignUpDto } from './dto/signup.dto';
+import { SignUpVerifyDto } from './dto/signup-verify.dto';
 import { AuthService } from './auth.service';
 import type { AuthenticatedUser } from './types/auth-user.type';
 import type { FastifyReply, FastifyRequest } from 'fastify';
@@ -18,7 +20,9 @@ export declare class AuthController {
     private clearRefreshCookie;
     private readRefreshTokenFromCookie;
     private readRefreshTokenFromCookieIfPresent;
-    signUp(dto: SignUpDto, reply: FastifyReply): Promise<AuthResponseDto>;
+    signUpStart(dto: SignUpDto): Promise<SignUpChallengeResponseDto>;
+    signUpVerify(dto: SignUpVerifyDto, reply: FastifyReply): Promise<AuthResponseDto>;
+    signUpResend(dto: SignUpResendDto): Promise<SignUpChallengeResponseDto>;
     login(dto: LoginDto, reply: FastifyReply): Promise<AuthResponseDto>;
     refresh(request: FastifyRequest, reply: FastifyReply): Promise<AuthResponseDto>;
     logout(request: FastifyRequest, reply: FastifyReply): Promise<LogoutResponseDto>;

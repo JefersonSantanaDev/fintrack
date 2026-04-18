@@ -7,6 +7,13 @@ export declare class AuthResponseDto {
     user: PublicUserDto;
     accessToken: string;
 }
+export declare class SignUpChallengeResponseDto {
+    success: boolean;
+    message: string;
+    email: string;
+    expiresInSeconds: number;
+    resendAvailableInSeconds: number;
+}
 export declare class MeResponseDto {
     user: PublicUserDto;
 }

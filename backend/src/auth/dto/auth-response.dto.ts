@@ -36,6 +36,39 @@ export class AuthResponseDto {
   accessToken!: string;
 }
 
+export class SignUpChallengeResponseDto {
+  @ApiProperty({
+    description: 'Indica processamento bem sucedido da etapa.',
+    example: true,
+  })
+  success!: boolean;
+
+  @ApiProperty({
+    description: 'Mensagem de retorno para o frontend.',
+    example: 'Enviamos um codigo de verificacao para seu email.',
+  })
+  message!: string;
+
+  @ApiProperty({
+    description: 'Email alvo da verificacao.',
+    format: 'email',
+    example: 'jeferson@fintrack.app',
+  })
+  email!: string;
+
+  @ApiProperty({
+    description: 'Tempo de expiracao do codigo atual em segundos.',
+    example: 600,
+  })
+  expiresInSeconds!: number;
+
+  @ApiProperty({
+    description: 'Tempo restante (segundos) para permitir novo reenvio.',
+    example: 60,
+  })
+  resendAvailableInSeconds!: number;
+}
+
 export class MeResponseDto {
   @ApiProperty({
     description: 'Dados publicos da sessao atual.',
@@ -114,7 +147,7 @@ export class ApiValidationErrorResponseDto {
 
   @ApiProperty({
     description: 'Rota que originou o erro.',
-    example: '/api/auth/signup',
+    example: '/api/auth/signup/start',
   })
   path!: string;
 }

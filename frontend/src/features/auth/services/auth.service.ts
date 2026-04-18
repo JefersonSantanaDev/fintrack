@@ -21,6 +21,19 @@ export interface SignUpInput {
   password: string
 }
 
+export interface SignUpVerifyInput {
+  email: string
+  code: string
+}
+
+export interface SignUpChallenge {
+  success: boolean
+  message: string
+  email: string
+  expiresInSeconds: number
+  resendAvailableInSeconds: number
+}
+
 interface AuthSuccessPayload {
   user: AuthUser
   accessToken: string
@@ -135,7 +148,7 @@ export async function loginWithEmailAndPassword(input: LoginInput) {
   return payload.user
 }
 
-export async function signUpWithEmailAndPassword(input: SignUpInput) {
+export async function startSignUpWithEmailAndPassword(input: SignUpInput) {
   const name = input.name.trim()
   const email = normalizeEmail(input.email)
   const password = input.password
@@ -152,15 +165,47 @@ export async function signUpWithEmailAndPassword(input: SignUpInput) {
     throw new Error('A senha deve ter pelo menos 6 caracteres.')
   }
 
-  const payload = await apiRequest<AuthSuccessPayload>('/auth/signup', {
+  return apiRequest<SignUpChallenge>('/auth/signup/start', {
     method: 'POST',
     body: JSON.stringify({ name, email, password }),
-    errorMessage: 'Nao foi possivel criar a conta.',
+    errorMessage: 'Nao foi possivel iniciar o cadastro.',
+  })
+}
+
+export async function verifySignUpWithCode(input: SignUpVerifyInput) {
+  const email = normalizeEmail(input.email)
+  const code = input.code.trim()
+
+  if (!email) {
+    throw new Error('Informe um email valido.')
+  }
+
+  if (!/^\d{6}$/.test(code)) {
+    throw new Error('Informe o codigo de 6 digitos.')
+  }
+
+  const payload = await apiRequest<AuthSuccessPayload>('/auth/signup/verify', {
+    method: 'POST',
+    body: JSON.stringify({ email, code }),
+    errorMessage: 'Nao foi possivel verificar o codigo.',
   })
 
   saveAccessToken(payload.accessToken)
-
   return payload.user
+}
+
+export async function resendSignUpCode(email: string) {
+  const normalizedEmail = normalizeEmail(email)
+
+  if (!normalizedEmail) {
+    throw new Error('Informe um email valido.')
+  }
+
+  return apiRequest<SignUpChallenge>('/auth/signup/resend', {
+    method: 'POST',
+    body: JSON.stringify({ email: normalizedEmail }),
+    errorMessage: 'Nao foi possivel reenviar o codigo.',
+  })
 }
 
 export async function logoutSession() {

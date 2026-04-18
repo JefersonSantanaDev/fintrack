@@ -5,10 +5,14 @@ import {
   getSessionUser,
   loginWithEmailAndPassword,
   logoutSession,
-  signUpWithEmailAndPassword,
+  resendSignUpCode,
+  startSignUpWithEmailAndPassword,
+  verifySignUpWithCode,
   type AuthUser,
   type LoginInput,
+  type SignUpChallenge,
   type SignUpInput,
+  type SignUpVerifyInput,
 } from '@/features/auth/services/auth.service'
 
 interface AuthContextValue {
@@ -19,7 +23,9 @@ interface AuthContextValue {
   isPostLoginLoading: boolean
   finishPostLoginLoading: () => void
   login: (input: LoginInput) => Promise<void>
-  signUp: (input: SignUpInput) => Promise<void>
+  startSignUp: (input: SignUpInput) => Promise<SignUpChallenge>
+  verifySignUp: (input: SignUpVerifyInput) => Promise<void>
+  resendSignUpCode: (email: string) => Promise<SignUpChallenge>
   logout: () => Promise<void>
 }
 
@@ -71,14 +77,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [])
 
-  const signUp = useCallback(async (input: SignUpInput) => {
+  const startSignUp = useCallback(async (input: SignUpInput) => {
+    setIsSubmitting(true)
+
+    try {
+      return await startSignUpWithEmailAndPassword(input)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [])
+
+  const verifySignUp = useCallback(async (input: SignUpVerifyInput) => {
     setIsSubmitting(true)
     setIsPostLoginLoading(false)
 
     try {
-      const createdUser = await signUpWithEmailAndPassword(input)
+      const createdUser = await verifySignUpWithCode(input)
       setUser(createdUser)
       setIsPostLoginLoading(true)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [])
+
+  const handleResendSignUpCode = useCallback(async (email: string) => {
+    setIsSubmitting(true)
+
+    try {
+      return await resendSignUpCode(email)
     } finally {
       setIsSubmitting(false)
     }
@@ -109,7 +135,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isPostLoginLoading,
       finishPostLoginLoading,
       login,
-      signUp,
+      startSignUp,
+      verifySignUp,
+      resendSignUpCode: handleResendSignUpCode,
       logout,
     }
   }, [
@@ -119,7 +147,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isPostLoginLoading,
     finishPostLoginLoading,
     login,
-    signUp,
+    startSignUp,
+    verifySignUp,
+    handleResendSignUpCode,
     logout,
   ])
 

@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApiValidationErrorResponseDto = exports.ApiErrorResponseDto = exports.LogoutResponseDto = exports.MeResponseDto = exports.AuthResponseDto = exports.PublicUserDto = void 0;
+exports.ApiValidationErrorResponseDto = exports.ApiErrorResponseDto = exports.LogoutResponseDto = exports.MeResponseDto = exports.SignUpChallengeResponseDto = exports.AuthResponseDto = exports.PublicUserDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 class PublicUserDto {
     id;
@@ -58,6 +58,50 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], AuthResponseDto.prototype, "accessToken", void 0);
+class SignUpChallengeResponseDto {
+    success;
+    message;
+    email;
+    expiresInSeconds;
+    resendAvailableInSeconds;
+}
+exports.SignUpChallengeResponseDto = SignUpChallengeResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica processamento bem sucedido da etapa.',
+        example: true,
+    }),
+    __metadata("design:type", Boolean)
+], SignUpChallengeResponseDto.prototype, "success", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Mensagem de retorno para o frontend.',
+        example: 'Enviamos um codigo de verificacao para seu email.',
+    }),
+    __metadata("design:type", String)
+], SignUpChallengeResponseDto.prototype, "message", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Email alvo da verificacao.',
+        format: 'email',
+        example: 'jeferson@fintrack.app',
+    }),
+    __metadata("design:type", String)
+], SignUpChallengeResponseDto.prototype, "email", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Tempo de expiracao do codigo atual em segundos.',
+        example: 600,
+    }),
+    __metadata("design:type", Number)
+], SignUpChallengeResponseDto.prototype, "expiresInSeconds", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Tempo restante (segundos) para permitir novo reenvio.',
+        example: 60,
+    }),
+    __metadata("design:type", Number)
+], SignUpChallengeResponseDto.prototype, "resendAvailableInSeconds", void 0);
 class MeResponseDto {
     user;
 }
@@ -165,7 +209,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Rota que originou o erro.',
-        example: '/api/auth/signup',
+        example: '/api/auth/signup/start',
     }),
     __metadata("design:type", String)
 ], ApiValidationErrorResponseDto.prototype, "path", void 0);

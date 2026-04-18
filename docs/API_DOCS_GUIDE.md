@@ -95,7 +95,7 @@ Bearer SEU_ACCESS_TOKEN
 
 ### Testar refresh (cookie httpOnly)
 
-1. Depois de login/signup no Swagger, use o mesmo navegador/sessao.
+1. Depois de login ou de `signup/start + signup/verify` no Swagger, use o mesmo navegador/sessao.
 2. Execute `POST /api/auth/refresh` sem body.
 3. Valide `200` com novo `accessToken` e novo `Set-Cookie`.
 
@@ -115,6 +115,7 @@ As rotas publicas de autenticacao usam duas camadas:
 
 1. Rate limit por rota (throttling HTTP).
 2. Bloqueio temporario de login por tentativas invalidas sucessivas.
+3. Cooldown e bloqueio por tentativas invalidas no codigo de verificacao de signup.
 
 Variaveis de ambiente:
 
@@ -123,6 +124,11 @@ AUTH_LOGIN_LOCK_ENABLED=true
 AUTH_LOGIN_MAX_FAILED_ATTEMPTS=5
 AUTH_LOGIN_ATTEMPT_WINDOW_MS=600000
 AUTH_LOGIN_LOCK_DURATION_MS=900000
+AUTH_SIGNUP_CODE_TTL_MS=600000
+AUTH_SIGNUP_CODE_RESEND_COOLDOWN_MS=60000
+AUTH_SIGNUP_CODE_MAX_ATTEMPTS=5
+AUTH_SIGNUP_CODE_LOCK_DURATION_MS=900000
+AUTH_SIGNUP_CODE_LENGTH=6
 ```
 
 Para testes automatizados com muitos logins seguidos, voce pode desativar o lock temporariamente:

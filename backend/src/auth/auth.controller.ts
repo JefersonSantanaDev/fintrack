@@ -31,9 +31,12 @@ import {
   AuthResponseDto,
   LogoutResponseDto,
   MeResponseDto,
+  SignUpChallengeResponseDto,
 } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
+import { SignUpResendDto } from './dto/signup-resend.dto';
 import { SignUpDto } from './dto/signup.dto';
+import { SignUpVerifyDto } from './dto/signup-verify.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
 import type { AuthenticatedUser } from './types/auth-user.type';
@@ -49,7 +52,11 @@ const oneMinuteMs = 60_000;
 const fiveMinutesMs = 5 * 60_000;
 
 @ApiTags('Auth')
-@ApiExtraModels(ApiErrorResponseDto, ApiValidationErrorResponseDto)
+@ApiExtraModels(
+  ApiErrorResponseDto,
+  ApiValidationErrorResponseDto,
+  SignUpChallengeResponseDto,
+)
 @Controller('auth')
 export class AuthController {
   private readonly refreshCookieName: string;
@@ -160,15 +167,16 @@ export class AuthController {
     return cookies?.[this.refreshCookieName] ?? null;
   }
 
-  @Post('signup')
+  @Post('signup/start')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Criar conta',
-    description: 'Cria um novo usuario e retorna access token. O refresh token vai em cookie httpOnly.',
+    summary: 'Iniciar cadastro',
+    description:
+      'Inicia o cadastro com envio de codigo de verificacao para o email informado.',
   })
   @ApiCreatedResponse({
-    description: 'Conta criada e sessao iniciada com sucesso.',
-    type: AuthResponseDto,
+    description: 'Codigo de verificacao enviado com sucesso.',
+    type: SignUpChallengeResponseDto,
   })
   @ApiConflictResponse({
     description: 'Email ja cadastrado.',
@@ -181,20 +189,92 @@ export class AuthController {
     }),
   })
   @ApiTooManyRequestsResponse({
-    description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
-    content: apiErrorContent({ rateLimitRota: swaggerErrorExamples.rateLimitRota }),
+    description: 'Aguarde para solicitar outro codigo.',
+    content: apiErrorContent({ rateLimitSignUp: swaggerErrorExamples.rateLimitSignUp }),
   })
   @Throttle({ default: { limit: 3, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } })
-  async signUp(
+  async signUpStart(
     @Body() dto: SignUpDto,
+  ): Promise<SignUpChallengeResponseDto> {
+    return this.authService.startSignUp(dto);
+  }
+
+  @Post('signup/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Verificar cadastro',
+    description:
+      'Valida codigo de verificacao de cadastro, cria conta e inicia sessao.',
+  })
+  @ApiOkResponse({
+    description: 'Codigo validado e sessao iniciada com sucesso.',
+    type: AuthResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Codigo invalido ou expirado.',
+    content: apiErrorContent({
+      codigoInvalido: swaggerErrorExamples.codigoInvalido,
+      codigoExpirado: swaggerErrorExamples.codigoExpirado,
+    }),
+  })
+  @ApiConflictResponse({
+    description: 'Email ja cadastrado.',
+    content: apiErrorContent({ emailEmUso: swaggerErrorExamples.emailEmUso }),
+  })
+  @ApiBadRequestResponse({
+    description: 'Payload invalido.',
+    content: apiValidationErrorContent({
+      payloadInvalidoSignUpVerify: swaggerErrorExamples.payloadInvalidoSignUpVerify,
+    }),
+  })
+  @ApiTooManyRequestsResponse({
+    description:
+      'Muitas tentativas de verificacao. Aguarde para tentar novamente.',
+    content: apiErrorContent({
+      rateLimitSignUpVerify: swaggerErrorExamples.rateLimitSignUpVerify,
+    }),
+  })
+  @Throttle({ default: { limit: 8, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } })
+  async signUpVerify(
+    @Body() dto: SignUpVerifyDto,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<AuthResponseDto> {
-    const response = await this.authService.signUp(dto);
+    const response = await this.authService.verifySignUp(dto);
     this.setRefreshCookie(reply, response.refreshToken);
     return {
       user: response.user,
       accessToken: response.accessToken,
     };
+  }
+
+  @Post('signup/resend')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Reenviar codigo de cadastro',
+    description: 'Reenvia um novo codigo para o email de cadastro pendente.',
+  })
+  @ApiOkResponse({
+    description: 'Novo codigo enviado com sucesso.',
+    type: SignUpChallengeResponseDto,
+  })
+  @ApiConflictResponse({
+    description: 'Email ja cadastrado.',
+    content: apiErrorContent({ emailEmUso: swaggerErrorExamples.emailEmUso }),
+  })
+  @ApiBadRequestResponse({
+    description: 'Cadastro pendente nao encontrado ou payload invalido.',
+    content: apiErrorContent({
+      cadastroPendenteNaoEncontrado: swaggerErrorExamples.cadastroPendenteNaoEncontrado,
+      payloadInvalidoSignUpResend: swaggerErrorExamples.payloadInvalidoSignUpResend,
+    }),
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Ainda nao e possivel solicitar novo codigo.',
+    content: apiErrorContent({ rateLimitSignUp: swaggerErrorExamples.rateLimitSignUp }),
+  })
+  @Throttle({ default: { limit: 3, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } })
+  async signUpResend(@Body() dto: SignUpResendDto): Promise<SignUpChallengeResponseDto> {
+    return this.authService.resendSignUpCode(dto);
   }
 
   @Post('login')

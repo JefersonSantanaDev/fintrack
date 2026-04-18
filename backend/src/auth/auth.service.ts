@@ -1,18 +1,24 @@
 import {
+  BadRequestException,
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { randomUUID } from 'crypto';
+import { randomInt, randomUUID } from 'crypto';
 import type { StringValue } from 'ms';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
+import { SignUpResendDto } from './dto/signup-resend.dto';
 import { SignUpDto } from './dto/signup.dto';
+import { SignUpVerifyDto } from './dto/signup-verify.dto';
 import { LoginAttemptsService } from './login-attempts.service';
+import { SignUpMailService } from './signup-mail.service';
 import {
   AccessTokenPayload,
   RefreshTokenPayload,
@@ -30,6 +36,14 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
+export interface SignUpChallengeResponse {
+  success: boolean;
+  message: string;
+  email: string;
+  expiresInSeconds: number;
+  resendAvailableInSeconds: number;
+}
+
 @Injectable()
 export class AuthService {
   private readonly accessSecret: string;
@@ -38,11 +52,18 @@ export class AuthService {
   private readonly refreshExpiresIn: StringValue | number;
   private readonly bcryptSaltRounds: number;
 
+  private readonly signUpCodeTtlMs: number;
+  private readonly signUpCodeResendCooldownMs: number;
+  private readonly signUpCodeMaxAttempts: number;
+  private readonly signUpCodeLockDurationMs: number;
+  private readonly signUpCodeLength: number;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly loginAttemptsService: LoginAttemptsService,
+    private readonly signUpMailService: SignUpMailService,
   ) {
     this.accessSecret = this.configService.getOrThrow<string>('JWT_ACCESS_SECRET');
     this.refreshSecret = this.configService.getOrThrow<string>(
@@ -59,9 +80,30 @@ export class AuthService {
     this.bcryptSaltRounds = Number(
       this.configService.get<string>('BCRYPT_SALT_ROUNDS', '10'),
     );
+
+    this.signUpCodeTtlMs = this.parsePositiveNumber(
+      this.configService.get<string>('AUTH_SIGNUP_CODE_TTL_MS'),
+      10 * 60_000,
+    );
+    this.signUpCodeResendCooldownMs = this.parsePositiveNumber(
+      this.configService.get<string>('AUTH_SIGNUP_CODE_RESEND_COOLDOWN_MS'),
+      60_000,
+    );
+    this.signUpCodeMaxAttempts = this.parsePositiveNumber(
+      this.configService.get<string>('AUTH_SIGNUP_CODE_MAX_ATTEMPTS'),
+      5,
+    );
+    this.signUpCodeLockDurationMs = this.parsePositiveNumber(
+      this.configService.get<string>('AUTH_SIGNUP_CODE_LOCK_DURATION_MS'),
+      15 * 60_000,
+    );
+    this.signUpCodeLength = this.parseCodeLength(
+      this.configService.get<string>('AUTH_SIGNUP_CODE_LENGTH'),
+      6,
+    );
   }
 
-  async signUp(dto: SignUpDto): Promise<AuthResponse> {
+  async startSignUp(dto: SignUpDto): Promise<SignUpChallengeResponse> {
     const email = this.normalizeEmail(dto.email);
     const existingUser = await this.prisma.user.findUnique({ where: { email } });
 
@@ -69,15 +111,164 @@ export class AuthService {
       throw new ConflictException('Este email ja esta em uso.');
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, this.bcryptSaltRounds);
+    const now = Date.now();
+    const pending = await this.prisma.signupVerification.findUnique({
+      where: { email },
+    });
 
-    const user = await this.prisma.user.create({
-      data: {
-        name: dto.name.trim(),
+    if (pending) {
+      this.ensureSignUpVerificationNotLocked(pending.lockedUntil);
+      this.ensureSignUpResendAvailable(pending.resendAvailableAt);
+    }
+
+    const code = this.generateNumericCode();
+    const codeHash = await bcrypt.hash(code, this.bcryptSaltRounds);
+    const passwordHash = await bcrypt.hash(dto.password, this.bcryptSaltRounds);
+    const expiresAt = new Date(now + this.signUpCodeTtlMs);
+    const resendAvailableAt = new Date(now + this.signUpCodeResendCooldownMs);
+
+    await this.prisma.signupVerification.upsert({
+      where: { email },
+      create: {
         email,
+        name: dto.name.trim(),
         passwordHash,
+        codeHash,
+        expiresAt,
+        resendAvailableAt,
+      },
+      update: {
+        name: dto.name.trim(),
+        passwordHash,
+        codeHash,
+        expiresAt,
+        resendAvailableAt,
+        attemptCount: 0,
+        lockedUntil: null,
       },
     });
+
+    await this.signUpMailService.sendSignUpCode({
+      email,
+      name: dto.name.trim(),
+      code,
+      expiresInMinutes: Math.ceil(this.signUpCodeTtlMs / 60_000),
+    });
+
+    return this.toSignUpChallengeResponse(
+      email,
+      expiresAt,
+      resendAvailableAt,
+      'Enviamos um codigo de verificacao para seu email.',
+    );
+  }
+
+  async resendSignUpCode(dto: SignUpResendDto): Promise<SignUpChallengeResponse> {
+    const email = this.normalizeEmail(dto.email);
+    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+
+    if (existingUser) {
+      throw new ConflictException('Este email ja esta em uso.');
+    }
+
+    const pending = await this.prisma.signupVerification.findUnique({
+      where: { email },
+    });
+
+    if (!pending) {
+      throw new BadRequestException('Nao existe cadastro pendente para este email.');
+    }
+
+    this.ensureSignUpVerificationNotLocked(pending.lockedUntil);
+    this.ensureSignUpResendAvailable(pending.resendAvailableAt);
+
+    const now = Date.now();
+    const code = this.generateNumericCode();
+    const codeHash = await bcrypt.hash(code, this.bcryptSaltRounds);
+    const expiresAt = new Date(now + this.signUpCodeTtlMs);
+    const resendAvailableAt = new Date(now + this.signUpCodeResendCooldownMs);
+
+    await this.prisma.signupVerification.update({
+      where: { email },
+      data: {
+        codeHash,
+        expiresAt,
+        resendAvailableAt,
+        attemptCount: 0,
+        lockedUntil: null,
+      },
+    });
+
+    await this.signUpMailService.sendSignUpCode({
+      email,
+      name: pending.name,
+      code,
+      expiresInMinutes: Math.ceil(this.signUpCodeTtlMs / 60_000),
+    });
+
+    return this.toSignUpChallengeResponse(
+      email,
+      expiresAt,
+      resendAvailableAt,
+      'Novo codigo enviado para seu email.',
+    );
+  }
+
+  async verifySignUp(dto: SignUpVerifyDto): Promise<AuthResponse> {
+    const email = this.normalizeEmail(dto.email);
+    const pending = await this.prisma.signupVerification.findUnique({
+      where: { email },
+    });
+
+    if (!pending) {
+      throw new UnauthorizedException('Codigo invalido ou expirado.');
+    }
+
+    this.ensureSignUpVerificationNotLocked(pending.lockedUntil);
+
+    if (pending.expiresAt.getTime() <= Date.now()) {
+      await this.prisma.signupVerification.delete({ where: { email } });
+      throw new UnauthorizedException(
+        'Codigo expirado. Solicite um novo codigo para continuar.',
+      );
+    }
+
+    const codeMatches = await bcrypt.compare(dto.code, pending.codeHash);
+
+    if (!codeMatches) {
+      await this.registerInvalidSignUpCodeAttempt(email, pending.attemptCount);
+      throw new UnauthorizedException('Codigo de verificacao invalido.');
+    }
+
+    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+
+    if (existingUser) {
+      await this.prisma.signupVerification.delete({ where: { email } });
+      throw new ConflictException('Este email ja esta em uso.');
+    }
+
+    let user: User;
+
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          name: pending.name,
+          email: pending.email,
+          passwordHash: pending.passwordHash,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError
+        && error.code === 'P2002'
+      ) {
+        throw new ConflictException('Este email ja esta em uso.');
+      }
+
+      throw error;
+    }
+
+    await this.prisma.signupVerification.delete({ where: { email } });
 
     return this.buildAuthResponse(user);
   }
@@ -169,6 +360,30 @@ export class AuthService {
     return { user: this.toPublicUser(user) };
   }
 
+  private parsePositiveNumber(input: string | undefined, fallback: number) {
+    const parsed = Number(input);
+
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return fallback;
+    }
+
+    return parsed;
+  }
+
+  private parseCodeLength(input: string | undefined, fallback: number) {
+    const parsed = Math.floor(this.parsePositiveNumber(input, fallback));
+
+    if (parsed < 4) {
+      return 4;
+    }
+
+    if (parsed > 8) {
+      return 8;
+    }
+
+    return parsed;
+  }
+
   private normalizeEmail(email: string) {
     return email.trim().toLowerCase();
   }
@@ -179,6 +394,107 @@ export class AuthService {
       name: user.name,
       email: user.email,
     };
+  }
+
+  private generateNumericCode() {
+    let code = '';
+
+    for (let index = 0; index < this.signUpCodeLength; index += 1) {
+      code += randomInt(0, 10).toString();
+    }
+
+    return code;
+  }
+
+  private toSignUpChallengeResponse(
+    email: string,
+    expiresAt: Date,
+    resendAvailableAt: Date,
+    message: string,
+  ): SignUpChallengeResponse {
+    const now = Date.now();
+
+    return {
+      success: true,
+      message,
+      email,
+      expiresInSeconds: Math.max(1, Math.ceil((expiresAt.getTime() - now) / 1000)),
+      resendAvailableInSeconds: Math.max(
+        1,
+        Math.ceil((resendAvailableAt.getTime() - now) / 1000),
+      ),
+    };
+  }
+
+  private ensureSignUpVerificationNotLocked(lockedUntil: Date | null) {
+    if (!lockedUntil) {
+      return;
+    }
+
+    const now = Date.now();
+
+    if (lockedUntil.getTime() <= now) {
+      return;
+    }
+
+    const retryInSeconds = Math.max(
+      1,
+      Math.ceil((lockedUntil.getTime() - now) / 1000),
+    );
+
+    throw new HttpException(
+      `Muitas tentativas de verificacao. Tente novamente em ${retryInSeconds}s.`,
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+  }
+
+  private ensureSignUpResendAvailable(resendAvailableAt: Date) {
+    const now = Date.now();
+
+    if (resendAvailableAt.getTime() <= now) {
+      return;
+    }
+
+    const retryInSeconds = Math.max(
+      1,
+      Math.ceil((resendAvailableAt.getTime() - now) / 1000),
+    );
+
+    throw new HttpException(
+      `Aguarde ${retryInSeconds}s para solicitar um novo codigo.`,
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+  }
+
+  private async registerInvalidSignUpCodeAttempt(
+    email: string,
+    attemptCount: number,
+  ) {
+    const nextAttemptCount = attemptCount + 1;
+    const lockNow = nextAttemptCount >= this.signUpCodeMaxAttempts;
+    const lockedUntil = lockNow
+      ? new Date(Date.now() + this.signUpCodeLockDurationMs)
+      : null;
+
+    await this.prisma.signupVerification.update({
+      where: { email },
+      data: {
+        attemptCount: nextAttemptCount,
+        lockedUntil,
+      },
+    });
+
+    if (lockNow && lockedUntil) {
+      const retryInSeconds = Math.max(
+        1,
+        Math.ceil((lockedUntil.getTime() - Date.now()) / 1000),
+      );
+
+      throw new HttpException(
+        `Muitas tentativas de verificacao. Tente novamente em ${retryInSeconds}s.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
   }
 
   private async buildAuthResponse(user: User): Promise<AuthResponse> {

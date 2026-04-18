@@ -69,9 +69,9 @@ Observacao importante:
 - O refresh token fica em cookie `httpOnly` (nao vem mais no JSON).
 - Em `curl`, use `-c` e `-b` para persistir e reenviar cookie.
 
-### 4.1 Signup
+### 4.1 Iniciar signup
 
-`POST /auth/signup`
+`POST /auth/signup/start`
 
 Body:
 
@@ -83,9 +83,38 @@ Body:
 }
 ```
 
-Esperado: `201` com `user` e `accessToken`, mais `Set-Cookie` do refresh token.
+Esperado: `201` com confirmacao do envio do codigo de verificacao por email.
 
-### 4.2 Login
+### 4.2 Verificar signup
+
+`POST /auth/signup/verify`
+
+Body:
+
+```json
+{
+  "email": "jeferson+1@fintrack.app",
+  "code": "123456"
+}
+```
+
+Esperado: `200` com `user` e `accessToken`, mais `Set-Cookie` do refresh token.
+
+### 4.3 Reenviar codigo (opcional)
+
+`POST /auth/signup/resend`
+
+Body:
+
+```json
+{
+  "email": "jeferson+1@fintrack.app"
+}
+```
+
+Esperado: `200` com confirmacao de novo codigo (sujeito a cooldown/rate limit).
+
+### 4.4 Login
 
 `POST /auth/login`
 
@@ -100,7 +129,7 @@ Body:
 
 Esperado: `200` com `user` e `accessToken`, mais `Set-Cookie` do refresh token.
 
-### 4.3 Me (rota protegida)
+### 4.5 Me (rota protegida)
 
 `GET /auth/me`
 
@@ -110,7 +139,7 @@ Header:
 
 Esperado: `200` com dados de `user`.
 
-### 4.4 Refresh
+### 4.6 Refresh
 
 `POST /auth/refresh`
 
@@ -118,7 +147,7 @@ Sem body.
 
 Esperado: `200` com novo `accessToken` e novo `Set-Cookie` de refresh token.
 
-### 4.5 Logout
+### 4.7 Logout
 
 `POST /auth/logout`
 
@@ -126,7 +155,7 @@ Sem body.
 
 Esperado: `200` com `{ "success": true }` e cookie expirado (`Max-Age=0`).
 
-### 4.6 Validar token revogado
+### 4.8 Validar token revogado
 
 Chame novamente:
 
@@ -150,7 +179,8 @@ npm run dev
 
 Fluxo esperado:
 
-- `Criar cadastro` chama `POST /auth/signup`
+- `Criar cadastro` chama `POST /auth/signup/start`
+- `Confirmar codigo` chama `POST /auth/signup/verify`
 - `Entrar` chama `POST /auth/login`
 - sessao valida chama `GET /auth/me`
 - expiracao de access token usa `POST /auth/refresh` automaticamente

@@ -20,7 +20,9 @@ const throttler_1 = require("@nestjs/throttler");
 const current_user_decorator_1 = require("./decorators/current-user.decorator");
 const auth_response_dto_1 = require("./dto/auth-response.dto");
 const login_dto_1 = require("./dto/login.dto");
+const signup_resend_dto_1 = require("./dto/signup-resend.dto");
 const signup_dto_1 = require("./dto/signup.dto");
+const signup_verify_dto_1 = require("./dto/signup-verify.dto");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const auth_service_1 = require("./auth.service");
 const swagger_error_examples_1 = require("../docs/swagger-error-examples");
@@ -94,13 +96,19 @@ let AuthController = class AuthController {
         const cookies = request.cookies;
         return cookies?.[this.refreshCookieName] ?? null;
     }
-    async signUp(dto, reply) {
-        const response = await this.authService.signUp(dto);
+    async signUpStart(dto) {
+        return this.authService.startSignUp(dto);
+    }
+    async signUpVerify(dto, reply) {
+        const response = await this.authService.verifySignUp(dto);
         this.setRefreshCookie(reply, response.refreshToken);
         return {
             user: response.user,
             accessToken: response.accessToken,
         };
+    }
+    async signUpResend(dto) {
+        return this.authService.resendSignUpCode(dto);
     }
     async login(dto, reply) {
         const response = await this.authService.login(dto);
@@ -131,15 +139,15 @@ let AuthController = class AuthController {
 };
 exports.AuthController = AuthController;
 __decorate([
-    (0, common_1.Post)('signup'),
+    (0, common_1.Post)('signup/start'),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     (0, swagger_1.ApiOperation)({
-        summary: 'Criar conta',
-        description: 'Cria um novo usuario e retorna access token. O refresh token vai em cookie httpOnly.',
+        summary: 'Iniciar cadastro',
+        description: 'Inicia o cadastro com envio de codigo de verificacao para o email informado.',
     }),
     (0, swagger_1.ApiCreatedResponse)({
-        description: 'Conta criada e sessao iniciada com sucesso.',
-        type: auth_response_dto_1.AuthResponseDto,
+        description: 'Codigo de verificacao enviado com sucesso.',
+        type: auth_response_dto_1.SignUpChallengeResponseDto,
     }),
     (0, swagger_1.ApiConflictResponse)({
         description: 'Email ja cadastrado.',
@@ -152,16 +160,88 @@ __decorate([
         }),
     }),
     (0, swagger_1.ApiTooManyRequestsResponse)({
-        description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
-        content: (0, swagger_error_examples_1.apiErrorContent)({ rateLimitRota: swagger_error_examples_1.swaggerErrorExamples.rateLimitRota }),
+        description: 'Aguarde para solicitar outro codigo.',
+        content: (0, swagger_error_examples_1.apiErrorContent)({ rateLimitSignUp: swagger_error_examples_1.swaggerErrorExamples.rateLimitSignUp }),
     }),
     (0, throttler_1.Throttle)({ default: { limit: 3, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } }),
     __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [signup_dto_1.SignUpDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "signUpStart", null);
+__decorate([
+    (0, common_1.Post)('signup/verify'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Verificar cadastro',
+        description: 'Valida codigo de verificacao de cadastro, cria conta e inicia sessao.',
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Codigo validado e sessao iniciada com sucesso.',
+        type: auth_response_dto_1.AuthResponseDto,
+    }),
+    (0, swagger_1.ApiUnauthorizedResponse)({
+        description: 'Codigo invalido ou expirado.',
+        content: (0, swagger_error_examples_1.apiErrorContent)({
+            codigoInvalido: swagger_error_examples_1.swaggerErrorExamples.codigoInvalido,
+            codigoExpirado: swagger_error_examples_1.swaggerErrorExamples.codigoExpirado,
+        }),
+    }),
+    (0, swagger_1.ApiConflictResponse)({
+        description: 'Email ja cadastrado.',
+        content: (0, swagger_error_examples_1.apiErrorContent)({ emailEmUso: swagger_error_examples_1.swaggerErrorExamples.emailEmUso }),
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Payload invalido.',
+        content: (0, swagger_error_examples_1.apiValidationErrorContent)({
+            payloadInvalidoSignUpVerify: swagger_error_examples_1.swaggerErrorExamples.payloadInvalidoSignUpVerify,
+        }),
+    }),
+    (0, swagger_1.ApiTooManyRequestsResponse)({
+        description: 'Muitas tentativas de verificacao. Aguarde para tentar novamente.',
+        content: (0, swagger_error_examples_1.apiErrorContent)({
+            rateLimitSignUpVerify: swagger_error_examples_1.swaggerErrorExamples.rateLimitSignUpVerify,
+        }),
+    }),
+    (0, throttler_1.Throttle)({ default: { limit: 8, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } }),
+    __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [signup_dto_1.SignUpDto, Object]),
+    __metadata("design:paramtypes", [signup_verify_dto_1.SignUpVerifyDto, Object]),
     __metadata("design:returntype", Promise)
-], AuthController.prototype, "signUp", null);
+], AuthController.prototype, "signUpVerify", null);
+__decorate([
+    (0, common_1.Post)('signup/resend'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Reenviar codigo de cadastro',
+        description: 'Reenvia um novo codigo para o email de cadastro pendente.',
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Novo codigo enviado com sucesso.',
+        type: auth_response_dto_1.SignUpChallengeResponseDto,
+    }),
+    (0, swagger_1.ApiConflictResponse)({
+        description: 'Email ja cadastrado.',
+        content: (0, swagger_error_examples_1.apiErrorContent)({ emailEmUso: swagger_error_examples_1.swaggerErrorExamples.emailEmUso }),
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Cadastro pendente nao encontrado ou payload invalido.',
+        content: (0, swagger_error_examples_1.apiErrorContent)({
+            cadastroPendenteNaoEncontrado: swagger_error_examples_1.swaggerErrorExamples.cadastroPendenteNaoEncontrado,
+            payloadInvalidoSignUpResend: swagger_error_examples_1.swaggerErrorExamples.payloadInvalidoSignUpResend,
+        }),
+    }),
+    (0, swagger_1.ApiTooManyRequestsResponse)({
+        description: 'Ainda nao e possivel solicitar novo codigo.',
+        content: (0, swagger_error_examples_1.apiErrorContent)({ rateLimitSignUp: swagger_error_examples_1.swaggerErrorExamples.rateLimitSignUp }),
+    }),
+    (0, throttler_1.Throttle)({ default: { limit: 3, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [signup_resend_dto_1.SignUpResendDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "signUpResend", null);
 __decorate([
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
@@ -274,7 +354,7 @@ __decorate([
 ], AuthController.prototype, "me", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Auth'),
-    (0, swagger_1.ApiExtraModels)(auth_response_dto_1.ApiErrorResponseDto, auth_response_dto_1.ApiValidationErrorResponseDto),
+    (0, swagger_1.ApiExtraModels)(auth_response_dto_1.ApiErrorResponseDto, auth_response_dto_1.ApiValidationErrorResponseDto, auth_response_dto_1.SignUpChallengeResponseDto),
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService,
         config_1.ConfigService])
