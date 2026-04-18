@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty({
@@ -13,9 +13,11 @@ export class LoginDto {
   @ApiProperty({
     description: 'Senha da conta.',
     minLength: 6,
+    maxLength: 72,
     example: '123456',
   })
   @IsString({ message: 'Senha deve ser um texto valido.' })
   @MinLength(6, { message: 'Senha deve ter no minimo 6 caracteres.' })
+  @MaxLength(72, { message: 'Senha deve ter no maximo 72 caracteres.' })
   password!: string;
 }

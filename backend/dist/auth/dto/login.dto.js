@@ -30,10 +30,12 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Senha da conta.',
         minLength: 6,
+        maxLength: 72,
         example: '123456',
     }),
     (0, class_validator_1.IsString)({ message: 'Senha deve ser um texto valido.' }),
     (0, class_validator_1.MinLength)(6, { message: 'Senha deve ter no minimo 6 caracteres.' }),
+    (0, class_validator_1.MaxLength)(72, { message: 'Senha deve ter no maximo 72 caracteres.' }),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
 //# sourceMappingURL=login.dto.js.map

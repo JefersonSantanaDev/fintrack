@@ -36,6 +36,7 @@ export declare class AuthService {
     private readonly configService;
     private readonly loginAttemptsService;
     private readonly signUpMailService;
+    private readonly logger;
     private readonly accessSecret;
     private readonly refreshSecret;
     private readonly accessExpiresIn;
@@ -64,6 +65,7 @@ export declare class AuthService {
     private parsePositiveNumber;
     private parseCodeLength;
     private normalizeEmail;
+    private maskEmailForLog;
     private hashOpaqueToken;
     private toPublicUser;
     private generateNumericCode;

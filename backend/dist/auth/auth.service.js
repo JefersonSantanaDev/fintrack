@@ -41,6 +41,7 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var AuthService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
@@ -52,12 +53,13 @@ const crypto_1 = require("crypto");
 const prisma_service_1 = require("../prisma/prisma.service");
 const login_attempts_service_1 = require("./login-attempts.service");
 const signup_mail_service_1 = require("./signup-mail.service");
-let AuthService = class AuthService {
+let AuthService = AuthService_1 = class AuthService {
     prisma;
     jwtService;
     configService;
     loginAttemptsService;
     signUpMailService;
+    logger = new common_1.Logger(AuthService_1.name);
     accessSecret;
     refreshSecret;
     accessExpiresIn;
@@ -248,7 +250,8 @@ let AuthService = class AuthService {
                     expiresInMinutes: Math.ceil(this.passwordResetTokenTtlMs / 60_000),
                 });
             }
-            catch {
+            catch (error) {
+                this.logger.error(`Falha interna no fluxo de recuperacao de senha para ${this.maskEmailForLog(user.email)}.`, error instanceof Error ? error.stack : undefined);
             }
         }
         return {
@@ -258,37 +261,49 @@ let AuthService = class AuthService {
     }
     async confirmPasswordRecovery(dto) {
         const tokenHash = this.hashOpaqueToken(dto.token.trim());
-        const resetToken = await this.prisma.passwordResetToken.findUnique({
-            where: { tokenHash },
-        });
-        if (!resetToken) {
-            throw new common_1.UnauthorizedException('Link de recuperacao invalido ou expirado.');
-        }
-        if (resetToken.usedAt || resetToken.expiresAt.getTime() <= Date.now()) {
-            throw new common_1.UnauthorizedException('Link de recuperacao invalido ou expirado.');
-        }
-        const passwordHash = await bcrypt.hash(dto.password, this.bcryptSaltRounds);
         const now = new Date();
+        const passwordHash = await bcrypt.hash(dto.password, this.bcryptSaltRounds);
         await this.prisma.$transaction(async (tx) => {
-            await tx.user.update({
-                where: { id: resetToken.userId },
-                data: { passwordHash },
+            const consumeResult = await tx.passwordResetToken.updateMany({
+                where: {
+                    tokenHash,
+                    usedAt: null,
+                    expiresAt: {
+                        gt: now,
+                    },
+                },
+                data: {
+                    usedAt: now,
+                },
             });
-            await tx.passwordResetToken.update({
-                where: { id: resetToken.id },
-                data: { usedAt: now },
+            if (consumeResult.count !== 1) {
+                throw new common_1.UnauthorizedException('Link de recuperacao invalido ou expirado.');
+            }
+            const consumedResetToken = await tx.passwordResetToken.findUnique({
+                where: { tokenHash },
+                select: {
+                    id: true,
+                    userId: true,
+                },
+            });
+            if (!consumedResetToken) {
+                throw new common_1.UnauthorizedException('Link de recuperacao invalido ou expirado.');
+            }
+            await tx.user.update({
+                where: { id: consumedResetToken.userId },
+                data: { passwordHash },
             });
             await tx.passwordResetToken.updateMany({
                 where: {
-                    userId: resetToken.userId,
+                    userId: consumedResetToken.userId,
                     usedAt: null,
-                    id: { not: resetToken.id },
+                    id: { not: consumedResetToken.id },
                 },
                 data: { usedAt: now },
             });
             await tx.refreshToken.updateMany({
                 where: {
-                    userId: resetToken.userId,
+                    userId: consumedResetToken.userId,
                     revokedAt: null,
                 },
                 data: { revokedAt: now },
@@ -301,18 +316,18 @@ let AuthService = class AuthService {
     }
     async login(dto) {
         const email = this.normalizeEmail(dto.email);
-        this.loginAttemptsService.ensureCanAttempt(email);
+        await this.loginAttemptsService.ensureCanAttempt(email);
         const user = await this.prisma.user.findUnique({ where: { email } });
         if (!user) {
-            this.loginAttemptsService.registerFailedAttempt(email);
+            await this.loginAttemptsService.registerFailedAttempt(email);
             throw new common_1.UnauthorizedException('Email ou senha invalidos.');
         }
         const passwordMatch = await bcrypt.compare(dto.password, user.passwordHash);
         if (!passwordMatch) {
-            this.loginAttemptsService.registerFailedAttempt(email);
+            await this.loginAttemptsService.registerFailedAttempt(email);
             throw new common_1.UnauthorizedException('Email ou senha invalidos.');
         }
-        this.loginAttemptsService.clearAttempts(email);
+        await this.loginAttemptsService.clearAttempts(email);
         return this.buildAuthResponse(user);
     }
     async refresh(refreshToken) {
@@ -384,6 +399,14 @@ let AuthService = class AuthService {
     }
     normalizeEmail(email) {
         return email.trim().toLowerCase();
+    }
+    maskEmailForLog(email) {
+        const [localPart = '', domainPart = ''] = email.split('@');
+        if (!domainPart) {
+            return '***';
+        }
+        const visiblePrefix = localPart.slice(0, 2);
+        return `${visiblePrefix}***@${domainPart}`;
     }
     hashOpaqueToken(token) {
         return (0, crypto_1.createHash)('sha256').update(token).digest('hex');
@@ -525,7 +548,7 @@ let AuthService = class AuthService {
     }
 };
 exports.AuthService = AuthService;
-exports.AuthService = AuthService = __decorate([
+exports.AuthService = AuthService = AuthService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,

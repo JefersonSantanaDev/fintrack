@@ -32,10 +32,12 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Nova senha da conta.',
         minLength: 6,
+        maxLength: 72,
         example: 'novaSenha@123',
     }),
     (0, class_validator_1.IsString)({ message: 'Senha deve ser um texto valido.' }),
     (0, class_validator_1.MinLength)(6, { message: 'Senha deve ter no minimo 6 caracteres.' }),
+    (0, class_validator_1.MaxLength)(72, { message: 'Senha deve ter no maximo 72 caracteres.' }),
     __metadata("design:type", String)
 ], ForgotPasswordConfirmDto.prototype, "password", void 0);
 //# sourceMappingURL=forgot-password-confirm.dto.js.map

@@ -4,6 +4,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -53,6 +54,7 @@ export interface ActionResponse {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly accessSecret: string;
   private readonly refreshSecret: string;
   private readonly accessExpiresIn: StringValue | number;
@@ -324,8 +326,11 @@ export class AuthService {
           token,
           expiresInMinutes: Math.ceil(this.passwordResetTokenTtlMs / 60_000),
         });
-      } catch {
-        // Fluxo intencionalmente silencioso para nao vazar informacao sensivel.
+      } catch (error) {
+        this.logger.error(
+          `Falha interna no fluxo de recuperacao de senha para ${this.maskEmailForLog(user.email)}.`,
+          error instanceof Error ? error.stack : undefined,
+        );
       }
     }
 
@@ -340,44 +345,56 @@ export class AuthService {
     dto: ForgotPasswordConfirmDto,
   ): Promise<ActionResponse> {
     const tokenHash = this.hashOpaqueToken(dto.token.trim());
-    const resetToken = await this.prisma.passwordResetToken.findUnique({
-      where: { tokenHash },
-    });
-
-    if (!resetToken) {
-      throw new UnauthorizedException('Link de recuperacao invalido ou expirado.');
-    }
-
-    if (resetToken.usedAt || resetToken.expiresAt.getTime() <= Date.now()) {
-      throw new UnauthorizedException('Link de recuperacao invalido ou expirado.');
-    }
-
-    const passwordHash = await bcrypt.hash(dto.password, this.bcryptSaltRounds);
     const now = new Date();
+    const passwordHash = await bcrypt.hash(dto.password, this.bcryptSaltRounds);
 
     await this.prisma.$transaction(async tx => {
-      await tx.user.update({
-        where: { id: resetToken.userId },
-        data: { passwordHash },
+      const consumeResult = await tx.passwordResetToken.updateMany({
+        where: {
+          tokenHash,
+          usedAt: null,
+          expiresAt: {
+            gt: now,
+          },
+        },
+        data: {
+          usedAt: now,
+        },
       });
 
-      await tx.passwordResetToken.update({
-        where: { id: resetToken.id },
-        data: { usedAt: now },
+      if (consumeResult.count !== 1) {
+        throw new UnauthorizedException('Link de recuperacao invalido ou expirado.');
+      }
+
+      const consumedResetToken = await tx.passwordResetToken.findUnique({
+        where: { tokenHash },
+        select: {
+          id: true,
+          userId: true,
+        },
+      });
+
+      if (!consumedResetToken) {
+        throw new UnauthorizedException('Link de recuperacao invalido ou expirado.');
+      }
+
+      await tx.user.update({
+        where: { id: consumedResetToken.userId },
+        data: { passwordHash },
       });
 
       await tx.passwordResetToken.updateMany({
         where: {
-          userId: resetToken.userId,
+          userId: consumedResetToken.userId,
           usedAt: null,
-          id: { not: resetToken.id },
+          id: { not: consumedResetToken.id },
         },
         data: { usedAt: now },
       });
 
       await tx.refreshToken.updateMany({
         where: {
-          userId: resetToken.userId,
+          userId: consumedResetToken.userId,
           revokedAt: null,
         },
         data: { revokedAt: now },
@@ -392,23 +409,23 @@ export class AuthService {
 
   async login(dto: LoginDto): Promise<AuthResponse> {
     const email = this.normalizeEmail(dto.email);
-    this.loginAttemptsService.ensureCanAttempt(email);
+    await this.loginAttemptsService.ensureCanAttempt(email);
 
     const user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      this.loginAttemptsService.registerFailedAttempt(email);
+      await this.loginAttemptsService.registerFailedAttempt(email);
       throw new UnauthorizedException('Email ou senha invalidos.');
     }
 
     const passwordMatch = await bcrypt.compare(dto.password, user.passwordHash);
 
     if (!passwordMatch) {
-      this.loginAttemptsService.registerFailedAttempt(email);
+      await this.loginAttemptsService.registerFailedAttempt(email);
       throw new UnauthorizedException('Email ou senha invalidos.');
     }
 
-    this.loginAttemptsService.clearAttempts(email);
+    await this.loginAttemptsService.clearAttempts(email);
     return this.buildAuthResponse(user);
   }
 
@@ -503,6 +520,17 @@ export class AuthService {
 
   private normalizeEmail(email: string) {
     return email.trim().toLowerCase();
+  }
+
+  private maskEmailForLog(email: string) {
+    const [localPart = '', domainPart = ''] = email.split('@');
+
+    if (!domainPart) {
+      return '***';
+    }
+
+    const visiblePrefix = localPart.slice(0, 2);
+    return `${visiblePrefix}***@${domainPart}`;
   }
 
   private hashOpaqueToken(token: string) {

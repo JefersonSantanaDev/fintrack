@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, Matches, MinLength } from 'class-validator';
+import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class ForgotPasswordConfirmDto {
   @ApiProperty({
@@ -15,9 +15,11 @@ export class ForgotPasswordConfirmDto {
   @ApiProperty({
     description: 'Nova senha da conta.',
     minLength: 6,
+    maxLength: 72,
     example: 'novaSenha@123',
   })
   @IsString({ message: 'Senha deve ser um texto valido.' })
   @MinLength(6, { message: 'Senha deve ter no minimo 6 caracteres.' })
+  @MaxLength(72, { message: 'Senha deve ter no maximo 72 caracteres.' })
   password!: string;
 }

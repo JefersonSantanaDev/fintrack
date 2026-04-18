@@ -1,21 +1,18 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-
-interface LoginAttemptState {
-  failedCount: number;
-  windowStartedAt: number;
-  lockedUntil: number | null;
-}
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class LoginAttemptsService {
-  private readonly attempts = new Map<string, LoginAttemptState>();
   private readonly enabled: boolean;
   private readonly maxFailedAttempts: number;
   private readonly attemptWindowMs: number;
   private readonly lockDurationMs: number;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     this.enabled = this.parseBoolean(
       this.configService.get<string>('AUTH_LOGIN_LOCK_ENABLED'),
       true,
@@ -34,52 +31,69 @@ export class LoginAttemptsService {
     );
   }
 
-  ensureCanAttempt(email: string) {
+  async ensureCanAttempt(email: string) {
     if (!this.enabled) {
       return;
     }
 
     const key = this.normalizeEmail(email);
-    const state = this.attempts.get(key);
+    const state = await this.prisma.loginAttempt.findUnique({
+      where: { email: key },
+    });
 
     if (!state) {
       return;
     }
 
-    const now = Date.now();
+    const nowMs = Date.now();
 
-    if (state.lockedUntil && state.lockedUntil > now) {
-      const retryInSeconds = Math.ceil((state.lockedUntil - now) / 1000);
+    if (state.lockedUntil && state.lockedUntil.getTime() > nowMs) {
+      const retryInSeconds = Math.ceil((state.lockedUntil.getTime() - nowMs) / 1000);
       throw new HttpException(
         `Muitas tentativas de login. Tente novamente em ${retryInSeconds}s.`,
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
 
-    if (state.lockedUntil && state.lockedUntil <= now) {
-      this.attempts.delete(key);
+    if (state.lockedUntil && state.lockedUntil.getTime() <= nowMs) {
+      await this.prisma.loginAttempt.deleteMany({
+        where: { email: key },
+      });
       return;
     }
 
-    if (now - state.windowStartedAt > this.attemptWindowMs) {
-      this.attempts.delete(key);
+    if (nowMs - state.windowStartedAt.getTime() > this.attemptWindowMs) {
+      await this.prisma.loginAttempt.deleteMany({
+        where: { email: key },
+      });
     }
   }
 
-  registerFailedAttempt(email: string) {
+  async registerFailedAttempt(email: string) {
     if (!this.enabled) {
       return;
     }
 
     const key = this.normalizeEmail(email);
-    const current = this.attempts.get(key);
-    const now = Date.now();
+    const current = await this.prisma.loginAttempt.findUnique({
+      where: { email: key },
+    });
+    const nowMs = Date.now();
 
-    if (!current || now - current.windowStartedAt > this.attemptWindowMs) {
-      this.attempts.set(key, {
-        failedCount: 1,
-        windowStartedAt: now,
-        lockedUntil: null,
+    if (!current || nowMs - current.windowStartedAt.getTime() > this.attemptWindowMs) {
+      await this.prisma.loginAttempt.upsert({
+        where: { email: key },
+        create: {
+          email: key,
+          failedCount: 1,
+          windowStartedAt: new Date(nowMs),
+          lockedUntil: null,
+        },
+        update: {
+          failedCount: 1,
+          windowStartedAt: new Date(nowMs),
+          lockedUntil: null,
+        },
       });
       return;
     }
@@ -87,19 +101,24 @@ export class LoginAttemptsService {
     const failedCount = current.failedCount + 1;
     const shouldLock = failedCount >= this.maxFailedAttempts;
 
-    this.attempts.set(key, {
-      failedCount,
-      windowStartedAt: current.windowStartedAt,
-      lockedUntil: shouldLock ? now + this.lockDurationMs : null,
+    await this.prisma.loginAttempt.update({
+      where: { email: key },
+      data: {
+        failedCount,
+        windowStartedAt: current.windowStartedAt,
+        lockedUntil: shouldLock ? new Date(nowMs + this.lockDurationMs) : null,
+      },
     });
   }
 
-  clearAttempts(email: string) {
+  async clearAttempts(email: string) {
     if (!this.enabled) {
       return;
     }
 
-    this.attempts.delete(this.normalizeEmail(email));
+    await this.prisma.loginAttempt.deleteMany({
+      where: { email: this.normalizeEmail(email) },
+    });
   }
 
   private normalizeEmail(email: string) {
