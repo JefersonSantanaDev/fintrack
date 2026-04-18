@@ -3,7 +3,7 @@ import { Navigate, type RouteObject } from 'react-router-dom'
 import { RedirectIfAuth } from '@/app/guards/RedirectIfAuth'
 import { RequireAuth } from '@/app/guards/RequireAuth'
 import { appPaths, defaultAppPath } from '@/app/paths'
-import { LoginPage, SignUpPage } from '@/features/auth'
+import { ForgotPasswordPage, LoginPage, ResetPasswordPage, SignUpPage } from '@/features/auth'
 import { AccountsPage } from '@/features/accounts'
 import { BudgetsPage } from '@/features/budgets'
 import { DashboardPage } from '@/features/dashboard'
@@ -14,11 +14,13 @@ import { TransactionsPage } from '@/features/transactions'
 import { AppShell } from '@/shared/layout/AppShell'
 
 export const appRoutes: RouteObject[] = [
+  { path: appPaths.resetPassword, element: <ResetPasswordPage /> },
   {
     element: <RedirectIfAuth />,
     children: [
       { path: appPaths.login, element: <LoginPage /> },
       { path: appPaths.signup, element: <SignUpPage /> },
+      { path: appPaths.forgotPassword, element: <ForgotPasswordPage /> },
     ],
   },
   {

@@ -1,7 +1,9 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { ForgotPasswordConfirmDto } from './dto/forgot-password-confirm.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordRequestDto } from './dto/forgot-password-request.dto';
 import { SignUpResendDto } from './dto/signup-resend.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { SignUpVerifyDto } from './dto/signup-verify.dto';
@@ -24,6 +26,10 @@ export interface SignUpChallengeResponse {
     expiresInSeconds: number;
     resendAvailableInSeconds: number;
 }
+export interface ActionResponse {
+    success: boolean;
+    message: string;
+}
 export declare class AuthService {
     private readonly prisma;
     private readonly jwtService;
@@ -40,10 +46,13 @@ export declare class AuthService {
     private readonly signUpCodeMaxAttempts;
     private readonly signUpCodeLockDurationMs;
     private readonly signUpCodeLength;
+    private readonly passwordResetTokenTtlMs;
     constructor(prisma: PrismaService, jwtService: JwtService, configService: ConfigService, loginAttemptsService: LoginAttemptsService, signUpMailService: SignUpMailService);
     startSignUp(dto: SignUpDto): Promise<SignUpChallengeResponse>;
     resendSignUpCode(dto: SignUpResendDto): Promise<SignUpChallengeResponse>;
     verifySignUp(dto: SignUpVerifyDto): Promise<AuthResponse>;
+    requestPasswordRecovery(dto: ForgotPasswordRequestDto): Promise<ActionResponse>;
+    confirmPasswordRecovery(dto: ForgotPasswordConfirmDto): Promise<ActionResponse>;
     login(dto: LoginDto): Promise<AuthResponse>;
     refresh(refreshToken: string): Promise<AuthResponse>;
     logout(refreshToken?: string): Promise<{
@@ -55,6 +64,7 @@ export declare class AuthService {
     private parsePositiveNumber;
     private parseCodeLength;
     private normalizeEmail;
+    private hashOpaqueToken;
     private toPublicUser;
     private generateNumericCode;
     private toSignUpChallengeResponse;

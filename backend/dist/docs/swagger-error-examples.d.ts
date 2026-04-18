@@ -66,6 +66,26 @@ export declare const swaggerErrorExamples: {
             readonly path: "/api/auth/login";
         };
     };
+    readonly payloadInvalidoForgotPasswordRequest: {
+        readonly summary: "Payload invalido (forgot-password/request)";
+        readonly value: {
+            readonly statusCode: 400;
+            readonly message: readonly ["Email deve ser um email valido."];
+            readonly error: "Requisicao invalida";
+            readonly timestamp: "2026-04-17T03:40:12.000Z";
+            readonly path: "/api/auth/forgot-password/request";
+        };
+    };
+    readonly payloadInvalidoForgotPasswordConfirm: {
+        readonly summary: "Payload invalido (forgot-password/confirm)";
+        readonly value: {
+            readonly statusCode: 400;
+            readonly message: readonly ["Token invalido.", "Senha deve ter no minimo 6 caracteres."];
+            readonly error: "Requisicao invalida";
+            readonly timestamp: "2026-04-17T03:40:12.000Z";
+            readonly path: "/api/auth/forgot-password/confirm";
+        };
+    };
     readonly emailEmUso: {
         readonly summary: "Email ja cadastrado";
         readonly value: {
@@ -94,6 +114,16 @@ export declare const swaggerErrorExamples: {
             readonly error: "Nao autorizado";
             readonly timestamp: "2026-04-17T03:40:12.000Z";
             readonly path: "/api/auth/refresh";
+        };
+    };
+    readonly linkRecuperacaoInvalido: {
+        readonly summary: "Link de recuperacao invalido ou expirado";
+        readonly value: {
+            readonly statusCode: 401;
+            readonly message: "Link de recuperacao invalido ou expirado.";
+            readonly error: "Nao autorizado";
+            readonly timestamp: "2026-04-17T03:40:12.000Z";
+            readonly path: "/api/auth/forgot-password/confirm";
         };
     };
     readonly codigoInvalido: {
@@ -164,6 +194,26 @@ export declare const swaggerErrorExamples: {
             readonly error: "Muitas requisicoes";
             readonly timestamp: "2026-04-17T03:40:12.000Z";
             readonly path: "/api/auth/signup/verify";
+        };
+    };
+    readonly rateLimitForgotPassword: {
+        readonly summary: "Muitas requisicoes na recuperacao de senha";
+        readonly value: {
+            readonly statusCode: 429;
+            readonly message: "Muitas requisicoes. Tente novamente em 60s.";
+            readonly error: "Muitas requisicoes";
+            readonly timestamp: "2026-04-17T03:40:12.000Z";
+            readonly path: "/api/auth/forgot-password/request";
+        };
+    };
+    readonly rateLimitForgotPasswordConfirm: {
+        readonly summary: "Muitas requisicoes na confirmacao de nova senha";
+        readonly value: {
+            readonly statusCode: 429;
+            readonly message: "Muitas requisicoes. Tente novamente em 60s.";
+            readonly error: "Muitas requisicoes";
+            readonly timestamp: "2026-04-17T03:40:12.000Z";
+            readonly path: "/api/auth/forgot-password/confirm";
         };
     };
     readonly rateLimitRota: {

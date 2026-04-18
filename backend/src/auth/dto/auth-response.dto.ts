@@ -69,6 +69,20 @@ export class SignUpChallengeResponseDto {
   resendAvailableInSeconds!: number;
 }
 
+export class ActionResponseDto {
+  @ApiProperty({
+    description: 'Indica processamento bem sucedido da operacao.',
+    example: true,
+  })
+  success!: boolean;
+
+  @ApiProperty({
+    description: 'Mensagem de retorno para o frontend.',
+    example: 'Se o email estiver cadastrado, enviaremos as instrucoes de recuperacao.',
+  })
+  message!: string;
+}
+
 export class MeResponseDto {
   @ApiProperty({
     description: 'Dados publicos da sessao atual.',

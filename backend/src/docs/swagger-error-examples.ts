@@ -77,6 +77,26 @@ export const swaggerErrorExamples = {
       path: '/api/auth/login',
     },
   },
+  payloadInvalidoForgotPasswordRequest: {
+    summary: 'Payload invalido (forgot-password/request)',
+    value: {
+      statusCode: 400,
+      message: ['Email deve ser um email valido.'],
+      error: 'Requisicao invalida',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/forgot-password/request',
+    },
+  },
+  payloadInvalidoForgotPasswordConfirm: {
+    summary: 'Payload invalido (forgot-password/confirm)',
+    value: {
+      statusCode: 400,
+      message: ['Token invalido.', 'Senha deve ter no minimo 6 caracteres.'],
+      error: 'Requisicao invalida',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/forgot-password/confirm',
+    },
+  },
   emailEmUso: {
     summary: 'Email ja cadastrado',
     value: {
@@ -105,6 +125,16 @@ export const swaggerErrorExamples = {
       error: 'Nao autorizado',
       timestamp: '2026-04-17T03:40:12.000Z',
       path: '/api/auth/refresh',
+    },
+  },
+  linkRecuperacaoInvalido: {
+    summary: 'Link de recuperacao invalido ou expirado',
+    value: {
+      statusCode: 401,
+      message: 'Link de recuperacao invalido ou expirado.',
+      error: 'Nao autorizado',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/forgot-password/confirm',
     },
   },
   codigoInvalido: {
@@ -175,6 +205,26 @@ export const swaggerErrorExamples = {
       error: 'Muitas requisicoes',
       timestamp: '2026-04-17T03:40:12.000Z',
       path: '/api/auth/signup/verify',
+    },
+  },
+  rateLimitForgotPassword: {
+    summary: 'Muitas requisicoes na recuperacao de senha',
+    value: {
+      statusCode: 429,
+      message: 'Muitas requisicoes. Tente novamente em 60s.',
+      error: 'Muitas requisicoes',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/forgot-password/request',
+    },
+  },
+  rateLimitForgotPasswordConfirm: {
+    summary: 'Muitas requisicoes na confirmacao de nova senha',
+    value: {
+      statusCode: 429,
+      message: 'Muitas requisicoes. Tente novamente em 60s.',
+      error: 'Muitas requisicoes',
+      timestamp: '2026-04-17T03:40:12.000Z',
+      path: '/api/auth/forgot-password/confirm',
     },
   },
   rateLimitRota: {

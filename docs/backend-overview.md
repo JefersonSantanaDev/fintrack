@@ -15,6 +15,7 @@ Este documento explica como o backend do FinTrack esta montado hoje, de forma pr
 - Autenticacao: JWT (access token no header + refresh token em cookie httpOnly com rotacao)
 - Validacao: class-validator + ValidationPipe global
 - Infra local: Docker Compose (frontend + backend + db)
+- Email local (dev): Mailpit (SMTP fake) ou log do codigo no terminal
 
 ## 3) Arquitetura atual (MVP)
 
@@ -60,6 +61,7 @@ Auth:
 - `POST /auth/signup/start`
 - `POST /auth/signup/verify`
 - `POST /auth/signup/resend`
+- `POST /auth/forgot-password/request`
 - `POST /auth/login`
 - `POST /auth/refresh`
 - `POST /auth/logout`
@@ -84,6 +86,12 @@ Auth:
 3. compara senha com bcrypt;
 4. gera novo par de tokens;
 5. persiste hash do refresh token.
+
+### Recuperacao de senha (solicitacao)
+
+1. `POST /auth/forgot-password/request` recebe o email;
+2. sempre retorna sucesso com mensagem generica (anti-enumeracao);
+3. se a conta existir, envia email de recuperacao.
 
 ### Refresh (rotacao)
 
@@ -172,6 +180,11 @@ Variaveis principais:
 - `SMTP_USER`
 - `SMTP_PASS`
 - `SMTP_FROM`
+
+Para dev local:
+
+- Com Mailpit: `SMTP_HOST=localhost` e `SMTP_PORT=1025` (UI em `http://localhost:8025`)
+- Sem SMTP: `SMTP_HOST=` vazio + `AUTH_SIGNUP_LOG_CODE=true` (codigo no log do backend)
 
 ## 10) Como rodar
 

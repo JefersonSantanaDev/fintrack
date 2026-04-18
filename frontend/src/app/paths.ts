@@ -1,6 +1,8 @@
 export const appPaths = {
   login: '/login',
   signup: '/signup',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
   dashboard: '/dashboard',
   transactions: '/transactions',
   accounts: '/accounts',

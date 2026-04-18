@@ -20,6 +20,8 @@ const throttler_1 = require("@nestjs/throttler");
 const current_user_decorator_1 = require("./decorators/current-user.decorator");
 const auth_response_dto_1 = require("./dto/auth-response.dto");
 const login_dto_1 = require("./dto/login.dto");
+const forgot_password_confirm_dto_1 = require("./dto/forgot-password-confirm.dto");
+const forgot_password_request_dto_1 = require("./dto/forgot-password-request.dto");
 const signup_resend_dto_1 = require("./dto/signup-resend.dto");
 const signup_dto_1 = require("./dto/signup.dto");
 const signup_verify_dto_1 = require("./dto/signup-verify.dto");
@@ -109,6 +111,12 @@ let AuthController = class AuthController {
     }
     async signUpResend(dto) {
         return this.authService.resendSignUpCode(dto);
+    }
+    async requestPasswordRecovery(dto) {
+        return this.authService.requestPasswordRecovery(dto);
+    }
+    async confirmPasswordRecovery(dto) {
+        return this.authService.confirmPasswordRecovery(dto);
     }
     async login(dto, reply) {
         const response = await this.authService.login(dto);
@@ -243,6 +251,70 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "signUpResend", null);
 __decorate([
+    (0, common_1.Post)('forgot-password/request'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Solicitar recuperacao de senha',
+        description: 'Recebe email para recuperacao. Sempre retorna sucesso para evitar enumeracao de contas.',
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Solicitacao processada com sucesso (mensagem generica).',
+        type: auth_response_dto_1.ActionResponseDto,
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Payload invalido.',
+        content: (0, swagger_error_examples_1.apiValidationErrorContent)({
+            payloadInvalidoForgotPasswordRequest: swagger_error_examples_1.swaggerErrorExamples.payloadInvalidoForgotPasswordRequest,
+        }),
+    }),
+    (0, swagger_1.ApiTooManyRequestsResponse)({
+        description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
+        content: (0, swagger_error_examples_1.apiErrorContent)({
+            rateLimitForgotPassword: swagger_error_examples_1.swaggerErrorExamples.rateLimitForgotPassword,
+        }),
+    }),
+    (0, throttler_1.Throttle)({ default: { limit: 3, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [forgot_password_request_dto_1.ForgotPasswordRequestDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "requestPasswordRecovery", null);
+__decorate([
+    (0, common_1.Post)('forgot-password/confirm'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Confirmar recuperacao de senha',
+        description: 'Valida token recebido por email, redefine a senha e revoga sessoes ativas.',
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Senha redefinida com sucesso.',
+        type: auth_response_dto_1.ActionResponseDto,
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Payload invalido.',
+        content: (0, swagger_error_examples_1.apiValidationErrorContent)({
+            payloadInvalidoForgotPasswordConfirm: swagger_error_examples_1.swaggerErrorExamples.payloadInvalidoForgotPasswordConfirm,
+        }),
+    }),
+    (0, swagger_1.ApiUnauthorizedResponse)({
+        description: 'Token invalido ou expirado.',
+        content: (0, swagger_error_examples_1.apiErrorContent)({
+            linkRecuperacaoInvalido: swagger_error_examples_1.swaggerErrorExamples.linkRecuperacaoInvalido,
+        }),
+    }),
+    (0, swagger_1.ApiTooManyRequestsResponse)({
+        description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
+        content: (0, swagger_error_examples_1.apiErrorContent)({
+            rateLimitForgotPasswordConfirm: swagger_error_examples_1.swaggerErrorExamples.rateLimitForgotPasswordConfirm,
+        }),
+    }),
+    (0, throttler_1.Throttle)({ default: { limit: 8, ttl: oneMinuteMs, blockDuration: fiveMinutesMs } }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [forgot_password_confirm_dto_1.ForgotPasswordConfirmDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "confirmPasswordRecovery", null);
+__decorate([
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({
@@ -354,7 +426,7 @@ __decorate([
 ], AuthController.prototype, "me", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Auth'),
-    (0, swagger_1.ApiExtraModels)(auth_response_dto_1.ApiErrorResponseDto, auth_response_dto_1.ApiValidationErrorResponseDto, auth_response_dto_1.SignUpChallengeResponseDto),
+    (0, swagger_1.ApiExtraModels)(auth_response_dto_1.ApiErrorResponseDto, auth_response_dto_1.ApiValidationErrorResponseDto, auth_response_dto_1.SignUpChallengeResponseDto, auth_response_dto_1.ActionResponseDto),
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService,
         config_1.ConfigService])

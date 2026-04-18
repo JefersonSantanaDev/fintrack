@@ -10,10 +10,12 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { randomInt, randomUUID } from 'crypto';
+import { createHash, randomBytes, randomInt, randomUUID } from 'crypto';
 import type { StringValue } from 'ms';
 import { PrismaService } from '../prisma/prisma.service';
+import { ForgotPasswordConfirmDto } from './dto/forgot-password-confirm.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordRequestDto } from './dto/forgot-password-request.dto';
 import { SignUpResendDto } from './dto/signup-resend.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { SignUpVerifyDto } from './dto/signup-verify.dto';
@@ -44,6 +46,11 @@ export interface SignUpChallengeResponse {
   resendAvailableInSeconds: number;
 }
 
+export interface ActionResponse {
+  success: boolean;
+  message: string;
+}
+
 @Injectable()
 export class AuthService {
   private readonly accessSecret: string;
@@ -57,6 +64,7 @@ export class AuthService {
   private readonly signUpCodeMaxAttempts: number;
   private readonly signUpCodeLockDurationMs: number;
   private readonly signUpCodeLength: number;
+  private readonly passwordResetTokenTtlMs: number;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -100,6 +108,10 @@ export class AuthService {
     this.signUpCodeLength = this.parseCodeLength(
       this.configService.get<string>('AUTH_SIGNUP_CODE_LENGTH'),
       6,
+    );
+    this.passwordResetTokenTtlMs = this.parsePositiveNumber(
+      this.configService.get<string>('AUTH_PASSWORD_RESET_TOKEN_TTL_MS'),
+      15 * 60_000,
     );
   }
 
@@ -273,6 +285,111 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
+  async requestPasswordRecovery(
+    dto: ForgotPasswordRequestDto,
+  ): Promise<ActionResponse> {
+    const email = this.normalizeEmail(dto.email);
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (user) {
+      try {
+        const now = Date.now();
+        const token = randomBytes(32).toString('hex');
+        const tokenHash = this.hashOpaqueToken(token);
+        const expiresAt = new Date(now + this.passwordResetTokenTtlMs);
+
+        await this.prisma.$transaction(async tx => {
+          await tx.passwordResetToken.updateMany({
+            where: {
+              userId: user.id,
+              usedAt: null,
+            },
+            data: {
+              usedAt: new Date(now),
+            },
+          });
+
+          await tx.passwordResetToken.create({
+            data: {
+              userId: user.id,
+              tokenHash,
+              expiresAt,
+            },
+          });
+        });
+
+        await this.signUpMailService.sendPasswordRecoveryRequest({
+          email: user.email,
+          name: user.name,
+          token,
+          expiresInMinutes: Math.ceil(this.passwordResetTokenTtlMs / 60_000),
+        });
+      } catch {
+        // Fluxo intencionalmente silencioso para nao vazar informacao sensivel.
+      }
+    }
+
+    return {
+      success: true,
+      message:
+        'Se o email estiver cadastrado, enviaremos as instrucoes de recuperacao.',
+    };
+  }
+
+  async confirmPasswordRecovery(
+    dto: ForgotPasswordConfirmDto,
+  ): Promise<ActionResponse> {
+    const tokenHash = this.hashOpaqueToken(dto.token.trim());
+    const resetToken = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+    });
+
+    if (!resetToken) {
+      throw new UnauthorizedException('Link de recuperacao invalido ou expirado.');
+    }
+
+    if (resetToken.usedAt || resetToken.expiresAt.getTime() <= Date.now()) {
+      throw new UnauthorizedException('Link de recuperacao invalido ou expirado.');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, this.bcryptSaltRounds);
+    const now = new Date();
+
+    await this.prisma.$transaction(async tx => {
+      await tx.user.update({
+        where: { id: resetToken.userId },
+        data: { passwordHash },
+      });
+
+      await tx.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { usedAt: now },
+      });
+
+      await tx.passwordResetToken.updateMany({
+        where: {
+          userId: resetToken.userId,
+          usedAt: null,
+          id: { not: resetToken.id },
+        },
+        data: { usedAt: now },
+      });
+
+      await tx.refreshToken.updateMany({
+        where: {
+          userId: resetToken.userId,
+          revokedAt: null,
+        },
+        data: { revokedAt: now },
+      });
+    });
+
+    return {
+      success: true,
+      message: 'Senha atualizada com sucesso. Faca login novamente.',
+    };
+  }
+
   async login(dto: LoginDto): Promise<AuthResponse> {
     const email = this.normalizeEmail(dto.email);
     this.loginAttemptsService.ensureCanAttempt(email);
@@ -386,6 +503,10 @@ export class AuthService {
 
   private normalizeEmail(email: string) {
     return email.trim().toLowerCase();
+  }
+
+  private hashOpaqueToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
   }
 
   private toPublicUser(user: User): PublicUser {

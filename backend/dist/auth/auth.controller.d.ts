@@ -1,6 +1,8 @@
 import { ConfigService } from '@nestjs/config';
-import { AuthResponseDto, LogoutResponseDto, MeResponseDto, SignUpChallengeResponseDto } from './dto/auth-response.dto';
+import { ActionResponseDto, AuthResponseDto, LogoutResponseDto, MeResponseDto, SignUpChallengeResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordConfirmDto } from './dto/forgot-password-confirm.dto';
+import { ForgotPasswordRequestDto } from './dto/forgot-password-request.dto';
 import { SignUpResendDto } from './dto/signup-resend.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { SignUpVerifyDto } from './dto/signup-verify.dto';
@@ -23,6 +25,8 @@ export declare class AuthController {
     signUpStart(dto: SignUpDto): Promise<SignUpChallengeResponseDto>;
     signUpVerify(dto: SignUpVerifyDto, reply: FastifyReply): Promise<AuthResponseDto>;
     signUpResend(dto: SignUpResendDto): Promise<SignUpChallengeResponseDto>;
+    requestPasswordRecovery(dto: ForgotPasswordRequestDto): Promise<ActionResponseDto>;
+    confirmPasswordRecovery(dto: ForgotPasswordConfirmDto): Promise<ActionResponseDto>;
     login(dto: LoginDto, reply: FastifyReply): Promise<AuthResponseDto>;
     refresh(request: FastifyRequest, reply: FastifyReply): Promise<AuthResponseDto>;
     logout(request: FastifyRequest, reply: FastifyReply): Promise<LogoutResponseDto>;

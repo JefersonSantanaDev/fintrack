@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApiValidationErrorResponseDto = exports.ApiErrorResponseDto = exports.LogoutResponseDto = exports.MeResponseDto = exports.SignUpChallengeResponseDto = exports.AuthResponseDto = exports.PublicUserDto = void 0;
+exports.ApiValidationErrorResponseDto = exports.ApiErrorResponseDto = exports.LogoutResponseDto = exports.MeResponseDto = exports.ActionResponseDto = exports.SignUpChallengeResponseDto = exports.AuthResponseDto = exports.PublicUserDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 class PublicUserDto {
     id;
@@ -102,6 +102,25 @@ __decorate([
     }),
     __metadata("design:type", Number)
 ], SignUpChallengeResponseDto.prototype, "resendAvailableInSeconds", void 0);
+class ActionResponseDto {
+    success;
+    message;
+}
+exports.ActionResponseDto = ActionResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica processamento bem sucedido da operacao.',
+        example: true,
+    }),
+    __metadata("design:type", Boolean)
+], ActionResponseDto.prototype, "success", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Mensagem de retorno para o frontend.',
+        example: 'Se o email estiver cadastrado, enviaremos as instrucoes de recuperacao.',
+    }),
+    __metadata("design:type", String)
+], ActionResponseDto.prototype, "message", void 0);
 class MeResponseDto {
     user;
 }

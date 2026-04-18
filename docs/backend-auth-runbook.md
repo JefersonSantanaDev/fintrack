@@ -59,6 +59,46 @@ Retorno esperado:
 }
 ```
 
+### Email de verificacao local (sem custo)
+
+Voce pode usar dois modos:
+
+1. Mailpit (caixa fake local)
+2. Log do codigo no terminal
+
+#### Modo Mailpit (recomendado)
+
+Na raiz do projeto:
+
+```bash
+docker compose up -d mailpit
+```
+
+Abra:
+
+- Inbox: `http://localhost:8025`
+- SMTP: `localhost:1025`
+
+Para backend rodando fora do Docker (`backend/.env`):
+
+```bash
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_SECURE=false
+AUTH_SIGNUP_LOG_CODE=true
+```
+
+#### Modo apenas terminal (sem SMTP)
+
+No `backend/.env`, deixe:
+
+```bash
+SMTP_HOST=
+AUTH_SIGNUP_LOG_CODE=true
+```
+
+Assim, ao chamar `POST /auth/signup/start`, o codigo aparece no log do backend.
+
 ## 4) Testar fluxo real de login/refresh (Postman/Insomnia)
 
 Base URL:
@@ -129,7 +169,21 @@ Body:
 
 Esperado: `200` com `user` e `accessToken`, mais `Set-Cookie` do refresh token.
 
-### 4.5 Me (rota protegida)
+### 4.5 Recuperacao de senha (solicitacao)
+
+`POST /auth/forgot-password/request`
+
+Body:
+
+```json
+{
+  "email": "jeferson+1@fintrack.app"
+}
+```
+
+Esperado: `200` com mensagem generica de sucesso (mesmo se email nao existir).
+
+### 4.6 Me (rota protegida)
 
 `GET /auth/me`
 
@@ -139,7 +193,7 @@ Header:
 
 Esperado: `200` com dados de `user`.
 
-### 4.6 Refresh
+### 4.7 Refresh
 
 `POST /auth/refresh`
 
@@ -147,7 +201,7 @@ Sem body.
 
 Esperado: `200` com novo `accessToken` e novo `Set-Cookie` de refresh token.
 
-### 4.7 Logout
+### 4.8 Logout
 
 `POST /auth/logout`
 
@@ -155,7 +209,7 @@ Sem body.
 
 Esperado: `200` com `{ "success": true }` e cookie expirado (`Max-Age=0`).
 
-### 4.8 Validar token revogado
+### 4.9 Validar token revogado
 
 Chame novamente:
 

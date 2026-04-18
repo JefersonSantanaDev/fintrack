@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -24,6 +24,11 @@ import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 
 type SignUpStep = 'start' | 'verify'
+const OTP_LENGTH = 6
+
+function createEmptyOtpDigits() {
+  return Array.from({ length: OTP_LENGTH }, () => '')
+}
 
 interface SignUpTouchedFields {
   name: boolean
@@ -71,7 +76,7 @@ export function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [verificationCode, setVerificationCode] = useState('')
+  const [verificationDigits, setVerificationDigits] = useState<string[]>(() => createEmptyOtpDigits())
   const [pendingEmail, setPendingEmail] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -84,6 +89,9 @@ export function SignUpPage() {
     confirmPassword: false,
     verificationCode: false,
   })
+  const otpInputRefs = useRef<Array<HTMLInputElement | null>>([])
+
+  const verificationCode = verificationDigits.join('')
 
   const nameRequiredError = touched.name && !name.trim() ? 'Preencha este campo.' : null
   const emailRequiredError = touched.email && !email.trim() ? 'Preencha este campo.' : null
@@ -94,6 +102,115 @@ export function SignUpPage() {
     touched.verificationCode && !/^\d{6}$/.test(verificationCode.trim())
       ? 'Digite os 6 digitos do codigo.'
       : null
+
+  const focusOtpInput = (index: number) => {
+    const boundedIndex = Math.max(0, Math.min(index, OTP_LENGTH - 1))
+    otpInputRefs.current[boundedIndex]?.focus()
+  }
+
+  const handleOtpChange = (index: number, rawValue: string) => {
+    const normalizedDigits = rawValue.replace(/\D/g, '')
+    setTouched(prev => ({ ...prev, verificationCode: true }))
+
+    if (!normalizedDigits) {
+      setVerificationDigits(current => {
+        const next = [...current]
+        next[index] = ''
+        return next
+      })
+      return
+    }
+
+    setVerificationDigits(current => {
+      const next = [...current]
+
+      if (normalizedDigits.length === 1) {
+        next[index] = normalizedDigits
+        return next
+      }
+
+      for (let offset = 0; offset < normalizedDigits.length; offset += 1) {
+        const targetIndex = index + offset
+        if (targetIndex >= OTP_LENGTH) {
+          break
+        }
+        next[targetIndex] = normalizedDigits[offset] ?? ''
+      }
+
+      return next
+    })
+
+    if (normalizedDigits.length === 1) {
+      focusOtpInput(index + 1)
+      return
+    }
+
+    focusOtpInput(index + normalizedDigits.length)
+  }
+
+  const handleOtpKeyDown = (
+    index: number,
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (event.key === 'Backspace') {
+      event.preventDefault()
+      setTouched(prev => ({ ...prev, verificationCode: true }))
+
+      setVerificationDigits(current => {
+        const next = [...current]
+
+        if (next[index]) {
+          next[index] = ''
+          return next
+        }
+
+        const previousIndex = Math.max(index - 1, 0)
+        if (index > 0) {
+          next[previousIndex] = ''
+          window.requestAnimationFrame(() => focusOtpInput(previousIndex))
+        }
+
+        return next
+      })
+      return
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      focusOtpInput(index - 1)
+      return
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      focusOtpInput(index + 1)
+      return
+    }
+
+    if (event.key === ' ') {
+      event.preventDefault()
+    }
+  }
+
+  const handleOtpPaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    event.preventDefault()
+
+    const pastedDigits = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH)
+    if (!pastedDigits) {
+      return
+    }
+
+    setTouched(prev => ({ ...prev, verificationCode: true }))
+    setVerificationDigits(() => {
+      const next = createEmptyOtpDigits()
+      for (let index = 0; index < OTP_LENGTH; index += 1) {
+        next[index] = pastedDigits[index] ?? ''
+      }
+      return next
+    })
+
+    focusOtpInput(pastedDigits.length - 1)
+  }
 
   useEffect(() => {
     if (resendRetryInSeconds <= 0) {
@@ -136,6 +253,16 @@ export function SignUpPage() {
       window.clearInterval(intervalId)
     }
   }, [codeExpiresInSeconds])
+
+  useEffect(() => {
+    if (step !== 'verify') {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      focusOtpInput(0)
+    })
+  }, [step])
 
   const handleStartSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -180,7 +307,7 @@ export function SignUpPage() {
       })
       setPendingEmail(challenge.email)
       setStep('verify')
-      setVerificationCode('')
+      setVerificationDigits(createEmptyOtpDigits())
       setTouched(prev => ({ ...prev, verificationCode: false }))
       setResendRetryInSeconds(challenge.resendAvailableInSeconds)
       setCodeExpiresInSeconds(challenge.expiresInSeconds)
@@ -252,7 +379,7 @@ export function SignUpPage() {
   const moveBackToStart = () => {
     setStep('start')
     setPendingEmail('')
-    setVerificationCode('')
+    setVerificationDigits(createEmptyOtpDigits())
     setResendRetryInSeconds(0)
     setCodeExpiresInSeconds(0)
     setTouched(prev => ({ ...prev, verificationCode: false }))
@@ -478,25 +605,33 @@ export function SignUpPage() {
                 <form className="space-y-5" onSubmit={handleVerifySubmit} noValidate>
                   <div className="space-y-2">
                     <Label htmlFor="verificationCode">Codigo de verificacao</Label>
-                    <div className="relative">
-                      <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="verificationCode"
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        placeholder="000000"
-                        maxLength={6}
-                        value={verificationCode}
-                        onChange={event => {
-                          const numericValue = event.target.value.replace(/\D/g, '').slice(0, 6)
-                          setVerificationCode(numericValue)
-                          setTouched(prev => ({ ...prev, verificationCode: true }))
-                        }}
-                        onBlur={() => setTouched(prev => ({ ...prev, verificationCode: true }))}
-                        className="h-11 pl-9 tracking-[0.24em]"
-                        aria-invalid={verificationCodeError ? 'true' : 'false'}
-                      />
+                    <div className="space-y-2" onPaste={handleOtpPaste}>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        {verificationDigits.map((digit, index) => (
+                          <input
+                            key={`otp-${index + 1}`}
+                            ref={element => {
+                              otpInputRefs.current[index] = element
+                            }}
+                            id={index === 0 ? 'verificationCode' : undefined}
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                            pattern="[0-9]*"
+                            maxLength={1}
+                            value={digit}
+                            onChange={event => handleOtpChange(index, event.target.value)}
+                            onKeyDown={event => handleOtpKeyDown(index, event)}
+                            onBlur={() => setTouched(prev => ({ ...prev, verificationCode: true }))}
+                            aria-label={`Digito ${index + 1} do codigo`}
+                            aria-invalid={verificationCodeError ? 'true' : 'false'}
+                            className="h-12 w-11 rounded-md border border-border bg-card text-center text-2xl font-black text-foreground caret-[#faff69] outline-none transition-[border-color,box-shadow,color] focus:border-[#faff69] focus:text-[#faff69] focus:shadow-[0_0_0_3px_rgba(250,255,105,0.2)] focus-visible:outline-none focus-visible:ring-0 sm:h-14 sm:w-12"
+                          />
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Dica: voce pode colar o codigo completo.
+                      </p>
                     </div>
                     {verificationCodeError ? (
                       <p className="text-xs text-destructive">{verificationCodeError}</p>
@@ -517,7 +652,12 @@ export function SignUpPage() {
                   </Button>
 
                   <div className="flex items-center justify-between gap-3">
-                    <Button type="button" variant="ghost" className="h-10 px-0" onClick={moveBackToStart}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 min-w-[170px] px-4"
+                      onClick={moveBackToStart}
+                    >
                       Alterar dados
                     </Button>
                     <Button

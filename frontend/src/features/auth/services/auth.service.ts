@@ -34,6 +34,16 @@ export interface SignUpChallenge {
   resendAvailableInSeconds: number
 }
 
+export interface ActionResponse {
+  success: boolean
+  message: string
+}
+
+export interface ConfirmPasswordRecoveryInput {
+  token: string
+  password: string
+}
+
 interface AuthSuccessPayload {
   user: AuthUser
   accessToken: string
@@ -205,6 +215,39 @@ export async function resendSignUpCode(email: string) {
     method: 'POST',
     body: JSON.stringify({ email: normalizedEmail }),
     errorMessage: 'Nao foi possivel reenviar o codigo.',
+  })
+}
+
+export async function requestPasswordRecovery(email: string) {
+  const normalizedEmail = normalizeEmail(email)
+
+  if (!normalizedEmail) {
+    throw new Error('Informe um email valido.')
+  }
+
+  return apiRequest<ActionResponse>('/auth/forgot-password/request', {
+    method: 'POST',
+    body: JSON.stringify({ email: normalizedEmail }),
+    errorMessage: 'Nao foi possivel solicitar recuperacao de senha.',
+  })
+}
+
+export async function confirmPasswordRecovery(input: ConfirmPasswordRecoveryInput) {
+  const token = input.token.trim()
+  const password = input.password
+
+  if (!token) {
+    throw new Error('Link de recuperacao invalido.')
+  }
+
+  if (password.length < 6) {
+    throw new Error('A senha deve ter pelo menos 6 caracteres.')
+  }
+
+  return apiRequest<ActionResponse>('/auth/forgot-password/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ token, password }),
+    errorMessage: 'Nao foi possivel redefinir a senha.',
   })
 }
 

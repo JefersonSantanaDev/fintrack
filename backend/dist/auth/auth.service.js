@@ -68,6 +68,7 @@ let AuthService = class AuthService {
     signUpCodeMaxAttempts;
     signUpCodeLockDurationMs;
     signUpCodeLength;
+    passwordResetTokenTtlMs;
     constructor(prisma, jwtService, configService, loginAttemptsService, signUpMailService) {
         this.prisma = prisma;
         this.jwtService = jwtService;
@@ -84,6 +85,7 @@ let AuthService = class AuthService {
         this.signUpCodeMaxAttempts = this.parsePositiveNumber(this.configService.get('AUTH_SIGNUP_CODE_MAX_ATTEMPTS'), 5);
         this.signUpCodeLockDurationMs = this.parsePositiveNumber(this.configService.get('AUTH_SIGNUP_CODE_LOCK_DURATION_MS'), 15 * 60_000);
         this.signUpCodeLength = this.parseCodeLength(this.configService.get('AUTH_SIGNUP_CODE_LENGTH'), 6);
+        this.passwordResetTokenTtlMs = this.parsePositiveNumber(this.configService.get('AUTH_PASSWORD_RESET_TOKEN_TTL_MS'), 15 * 60_000);
     }
     async startSignUp(dto) {
         const email = this.normalizeEmail(dto.email);
@@ -212,6 +214,91 @@ let AuthService = class AuthService {
         await this.prisma.signupVerification.delete({ where: { email } });
         return this.buildAuthResponse(user);
     }
+    async requestPasswordRecovery(dto) {
+        const email = this.normalizeEmail(dto.email);
+        const user = await this.prisma.user.findUnique({ where: { email } });
+        if (user) {
+            try {
+                const now = Date.now();
+                const token = (0, crypto_1.randomBytes)(32).toString('hex');
+                const tokenHash = this.hashOpaqueToken(token);
+                const expiresAt = new Date(now + this.passwordResetTokenTtlMs);
+                await this.prisma.$transaction(async (tx) => {
+                    await tx.passwordResetToken.updateMany({
+                        where: {
+                            userId: user.id,
+                            usedAt: null,
+                        },
+                        data: {
+                            usedAt: new Date(now),
+                        },
+                    });
+                    await tx.passwordResetToken.create({
+                        data: {
+                            userId: user.id,
+                            tokenHash,
+                            expiresAt,
+                        },
+                    });
+                });
+                await this.signUpMailService.sendPasswordRecoveryRequest({
+                    email: user.email,
+                    name: user.name,
+                    token,
+                    expiresInMinutes: Math.ceil(this.passwordResetTokenTtlMs / 60_000),
+                });
+            }
+            catch {
+            }
+        }
+        return {
+            success: true,
+            message: 'Se o email estiver cadastrado, enviaremos as instrucoes de recuperacao.',
+        };
+    }
+    async confirmPasswordRecovery(dto) {
+        const tokenHash = this.hashOpaqueToken(dto.token.trim());
+        const resetToken = await this.prisma.passwordResetToken.findUnique({
+            where: { tokenHash },
+        });
+        if (!resetToken) {
+            throw new common_1.UnauthorizedException('Link de recuperacao invalido ou expirado.');
+        }
+        if (resetToken.usedAt || resetToken.expiresAt.getTime() <= Date.now()) {
+            throw new common_1.UnauthorizedException('Link de recuperacao invalido ou expirado.');
+        }
+        const passwordHash = await bcrypt.hash(dto.password, this.bcryptSaltRounds);
+        const now = new Date();
+        await this.prisma.$transaction(async (tx) => {
+            await tx.user.update({
+                where: { id: resetToken.userId },
+                data: { passwordHash },
+            });
+            await tx.passwordResetToken.update({
+                where: { id: resetToken.id },
+                data: { usedAt: now },
+            });
+            await tx.passwordResetToken.updateMany({
+                where: {
+                    userId: resetToken.userId,
+                    usedAt: null,
+                    id: { not: resetToken.id },
+                },
+                data: { usedAt: now },
+            });
+            await tx.refreshToken.updateMany({
+                where: {
+                    userId: resetToken.userId,
+                    revokedAt: null,
+                },
+                data: { revokedAt: now },
+            });
+        });
+        return {
+            success: true,
+            message: 'Senha atualizada com sucesso. Faca login novamente.',
+        };
+    }
     async login(dto) {
         const email = this.normalizeEmail(dto.email);
         this.loginAttemptsService.ensureCanAttempt(email);
@@ -297,6 +384,9 @@ let AuthService = class AuthService {
     }
     normalizeEmail(email) {
         return email.trim().toLowerCase();
+    }
+    hashOpaqueToken(token) {
+        return (0, crypto_1.createHash)('sha256').update(token).digest('hex');
     }
     toPublicUser(user) {
         return {

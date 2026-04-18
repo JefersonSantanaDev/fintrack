@@ -14,6 +14,10 @@ export declare class SignUpChallengeResponseDto {
     expiresInSeconds: number;
     resendAvailableInSeconds: number;
 }
+export declare class ActionResponseDto {
+    success: boolean;
+    message: string;
+}
 export declare class MeResponseDto {
     user: PublicUserDto;
 }
