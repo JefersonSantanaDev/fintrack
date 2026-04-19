@@ -8,6 +8,25 @@ export interface AuthUser {
   id: string
   name: string
   email: string
+  family: AuthFamily | null
+}
+
+export type FamilyRole = 'owner' | 'admin' | 'viewer'
+
+export interface AuthFamilyMember {
+  id: string
+  name: string
+  email: string
+  role: FamilyRole
+  isCurrentUser: boolean
+}
+
+export interface AuthFamily {
+  id: string
+  name: string
+  memberCount: number
+  role: FamilyRole
+  members: AuthFamilyMember[]
 }
 
 export interface LoginInput {
@@ -76,8 +95,15 @@ export interface ConfirmPasswordRecoveryInput {
   password: string
 }
 
+interface ApiAuthUser {
+  id: string
+  name: string
+  email: string
+}
+
 interface AuthSuccessPayload {
-  user: AuthUser
+  user: ApiAuthUser
+  family: AuthFamily | null
   accessToken: string
 }
 
@@ -108,6 +134,13 @@ function saveAccessToken(accessToken: string) {
 
 function clearAccessToken() {
   accessTokenInMemory = null
+}
+
+function toAuthUser(user: ApiAuthUser, family?: AuthFamily | null): AuthUser {
+  return {
+    ...user,
+    family: family ?? null,
+  }
 }
 
 function shouldClearTokensAfterRefreshError(error: unknown) {
@@ -151,15 +184,19 @@ clearLegacyTokenStorage()
 export async function getSessionUser() {
   if (!readAccessToken()) {
     const refreshed = await refreshTokens()
-    return refreshed?.user ?? null
+    if (!refreshed) {
+      return null
+    }
+
+    return toAuthUser(refreshed.user, refreshed.family)
   }
 
   try {
-    const payload = await apiRequest<{ user: AuthUser }>('/auth/me', {
+    const payload = await apiRequest<{ user: ApiAuthUser; family: AuthFamily | null }>('/auth/me', {
       auth: true,
       errorMessage: 'Nao foi possivel validar a sessao.',
     })
-    return payload.user ?? null
+    return toAuthUser(payload.user, payload.family)
   } catch (error) {
     if (error instanceof ApiRequestError) {
       if (error.statusCode === 401 || error.statusCode === 403) {
@@ -187,7 +224,7 @@ export async function loginWithEmailAndPassword(input: LoginInput) {
 
   saveAccessToken(payload.accessToken)
 
-  return payload.user
+  return toAuthUser(payload.user, payload.family)
 }
 
 export async function startSignUpWithEmailAndPassword(input: SignUpInput) {
@@ -233,7 +270,7 @@ export async function verifySignUpWithCode(input: SignUpVerifyInput) {
   })
 
   saveAccessToken(payload.accessToken)
-  return payload.user
+  return toAuthUser(payload.user, payload.family)
 }
 
 export async function resendSignUpCode(email: string) {

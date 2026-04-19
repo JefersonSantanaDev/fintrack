@@ -15,8 +15,10 @@ export interface PublicUser {
     name: string;
     email: string;
 }
+export type FamilyRole = 'owner' | 'admin' | 'viewer';
 export interface AuthResponse {
     user: PublicUser;
+    family: SessionFamilySnapshot | null;
     accessToken: string;
     refreshToken: string;
 }
@@ -35,11 +37,25 @@ export interface FamilySnapshot {
     id: string;
     name: string;
     memberCount: number;
-    role: 'owner' | 'admin' | 'viewer';
+    role: FamilyRole;
 }
 export interface FamilyOnboardingStatus {
     family: FamilySnapshot | null;
     shouldShowOnboarding: boolean;
+}
+export interface SessionFamilyMemberSnapshot {
+    id: string;
+    name: string;
+    email: string;
+    role: FamilyRole;
+    isCurrentUser: boolean;
+}
+export interface SessionFamilySnapshot {
+    id: string;
+    name: string;
+    memberCount: number;
+    role: FamilyRole;
+    members: SessionFamilyMemberSnapshot[];
 }
 export interface FamilyOnboardingInvitation {
     id: string;
@@ -83,6 +99,7 @@ export declare class AuthService {
     }>;
     getProfile(userId: string): Promise<{
         user: PublicUser;
+        family: SessionFamilySnapshot | null;
     }>;
     getFamilyOnboardingStatus(userId: string): Promise<FamilyOnboardingStatus>;
     inviteFamilyMembersFromOnboarding(userId: string, dto: FamilyOnboardingInviteMembersDto): Promise<FamilyOnboardingInviteMembersResponse>;
@@ -95,8 +112,12 @@ export declare class AuthService {
     private hashOpaqueToken;
     private buildDefaultFamilyName;
     private mapFamilyRole;
+    private rolePriority;
     private ensureOwnerFamilyAndMembership;
+    private ensureSessionFamilyMembership;
+    private linkUserToPendingFamilyInvitations;
     private toPublicUser;
+    private buildSessionFamilySnapshot;
     private generateNumericCode;
     private toSignUpChallengeResponse;
     private ensureSignUpVerificationNotLocked;

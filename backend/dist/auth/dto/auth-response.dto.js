@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApiValidationErrorResponseDto = exports.ApiErrorResponseDto = exports.LogoutResponseDto = exports.MeResponseDto = exports.FamilyOnboardingInviteMembersResponseDto = exports.FamilyOnboardingInvitationDto = exports.FamilyOnboardingStatusDto = exports.FamilySnapshotDto = exports.ActionResponseDto = exports.SignUpChallengeResponseDto = exports.AuthResponseDto = exports.PublicUserDto = void 0;
+exports.ApiValidationErrorResponseDto = exports.ApiErrorResponseDto = exports.LogoutResponseDto = exports.MeResponseDto = exports.FamilyOnboardingInviteMembersResponseDto = exports.FamilyOnboardingInvitationDto = exports.FamilyOnboardingStatusDto = exports.SessionFamilySnapshotDto = exports.SessionFamilyMemberSnapshotDto = exports.FamilySnapshotDto = exports.ActionResponseDto = exports.SignUpChallengeResponseDto = exports.AuthResponseDto = exports.PublicUserDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 class PublicUserDto {
     id;
@@ -41,6 +41,7 @@ __decorate([
 ], PublicUserDto.prototype, "email", void 0);
 class AuthResponseDto {
     user;
+    family;
     accessToken;
 }
 exports.AuthResponseDto = AuthResponseDto;
@@ -51,6 +52,14 @@ __decorate([
     }),
     __metadata("design:type", PublicUserDto)
 ], AuthResponseDto.prototype, "user", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Familia ativa da sessao com lista de membros.',
+        type: () => SessionFamilySnapshotDto,
+        nullable: true,
+    }),
+    __metadata("design:type", Object)
+], AuthResponseDto.prototype, "family", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'JWT de acesso para endpoints protegidos.',
@@ -157,6 +166,95 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], FamilySnapshotDto.prototype, "role", void 0);
+class SessionFamilyMemberSnapshotDto {
+    id;
+    name;
+    email;
+    role;
+    isCurrentUser;
+}
+exports.SessionFamilyMemberSnapshotDto = SessionFamilyMemberSnapshotDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Identificador do membro na familia.',
+        example: '4c66fc27-37f6-4fdd-b9de-36db78350d7f',
+    }),
+    __metadata("design:type", String)
+], SessionFamilyMemberSnapshotDto.prototype, "id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome de exibicao do membro da familia.',
+        example: 'Jeferson Santana',
+    }),
+    __metadata("design:type", String)
+], SessionFamilyMemberSnapshotDto.prototype, "name", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Email do membro da familia.',
+        format: 'email',
+        example: 'jeferson@fintrack.app',
+    }),
+    __metadata("design:type", String)
+], SessionFamilyMemberSnapshotDto.prototype, "email", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Papel do membro dentro da familia.',
+        example: 'owner',
+        enum: ['owner', 'admin', 'viewer'],
+    }),
+    __metadata("design:type", String)
+], SessionFamilyMemberSnapshotDto.prototype, "role", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica se esse membro e o usuario logado.',
+        example: true,
+    }),
+    __metadata("design:type", Boolean)
+], SessionFamilyMemberSnapshotDto.prototype, "isCurrentUser", void 0);
+class SessionFamilySnapshotDto {
+    id;
+    name;
+    memberCount;
+    role;
+    members;
+}
+exports.SessionFamilySnapshotDto = SessionFamilySnapshotDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Identificador unico da familia ativa da sessao.',
+        example: '7f047e08-3abf-4dc0-a814-c87d46f4f66f',
+    }),
+    __metadata("design:type", String)
+], SessionFamilySnapshotDto.prototype, "id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome de exibicao da familia.',
+        example: 'Familia Santana',
+    }),
+    __metadata("design:type", String)
+], SessionFamilySnapshotDto.prototype, "name", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Quantidade total de membros nessa familia.',
+        example: 2,
+    }),
+    __metadata("design:type", Number)
+], SessionFamilySnapshotDto.prototype, "memberCount", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Papel do usuario autenticado na familia.',
+        example: 'owner',
+        enum: ['owner', 'admin', 'viewer'],
+    }),
+    __metadata("design:type", String)
+], SessionFamilySnapshotDto.prototype, "role", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Membros vinculados a familia ativa.',
+        type: [SessionFamilyMemberSnapshotDto],
+    }),
+    __metadata("design:type", Array)
+], SessionFamilySnapshotDto.prototype, "members", void 0);
 class FamilyOnboardingStatusDto {
     family;
     shouldShowOnboarding;
@@ -259,6 +357,7 @@ __decorate([
 ], FamilyOnboardingInviteMembersResponseDto.prototype, "invitations", void 0);
 class MeResponseDto {
     user;
+    family;
 }
 exports.MeResponseDto = MeResponseDto;
 __decorate([
@@ -268,6 +367,14 @@ __decorate([
     }),
     __metadata("design:type", PublicUserDto)
 ], MeResponseDto.prototype, "user", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Familia ativa da sessao com lista de membros.',
+        type: () => SessionFamilySnapshotDto,
+        nullable: true,
+    }),
+    __metadata("design:type", Object)
+], MeResponseDto.prototype, "family", void 0);
 class LogoutResponseDto {
     success;
 }

@@ -5,6 +5,7 @@ export declare class PublicUserDto {
 }
 export declare class AuthResponseDto {
     user: PublicUserDto;
+    family: SessionFamilySnapshotDto | null;
     accessToken: string;
 }
 export declare class SignUpChallengeResponseDto {
@@ -23,6 +24,20 @@ export declare class FamilySnapshotDto {
     name: string;
     memberCount: number;
     role: 'owner' | 'admin' | 'viewer';
+}
+export declare class SessionFamilyMemberSnapshotDto {
+    id: string;
+    name: string;
+    email: string;
+    role: 'owner' | 'admin' | 'viewer';
+    isCurrentUser: boolean;
+}
+export declare class SessionFamilySnapshotDto {
+    id: string;
+    name: string;
+    memberCount: number;
+    role: 'owner' | 'admin' | 'viewer';
+    members: SessionFamilyMemberSnapshotDto[];
 }
 export declare class FamilyOnboardingStatusDto {
     family: FamilySnapshotDto | null;
@@ -43,6 +58,7 @@ export declare class FamilyOnboardingInviteMembersResponseDto {
 }
 export declare class MeResponseDto {
     user: PublicUserDto;
+    family: SessionFamilySnapshotDto | null;
 }
 export declare class LogoutResponseDto {
     success: boolean;

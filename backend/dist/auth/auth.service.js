@@ -213,6 +213,7 @@ let AuthService = AuthService_1 = class AuthService {
             }
             throw error;
         }
+        await this.linkUserToPendingFamilyInvitations(user);
         await this.prisma.signupVerification.delete({ where: { email } });
         return this.buildAuthResponse(user);
     }
@@ -378,8 +379,12 @@ let AuthService = AuthService_1 = class AuthService {
         if (!user) {
             throw new common_1.UnauthorizedException('Sessao invalida.');
         }
-        await this.ensureOwnerFamilyAndMembership(user);
-        return { user: this.toPublicUser(user) };
+        await this.ensureSessionFamilyMembership(user);
+        const family = await this.buildSessionFamilySnapshot(user.id);
+        return {
+            user: this.toPublicUser(user),
+            family,
+        };
     }
     async getFamilyOnboardingStatus(userId) {
         const user = await this.prisma.user.findUnique({
@@ -392,7 +397,7 @@ let AuthService = AuthService_1 = class AuthService {
         if (!user) {
             throw new common_1.UnauthorizedException('Sessao invalida.');
         }
-        await this.ensureOwnerFamilyAndMembership({
+        await this.ensureSessionFamilyMembership({
             id: user.id,
             name: user.name,
         });
@@ -450,7 +455,7 @@ let AuthService = AuthService_1 = class AuthService {
         if (!user) {
             throw new common_1.UnauthorizedException('Sessao invalida.');
         }
-        await this.ensureOwnerFamilyAndMembership({
+        await this.ensureSessionFamilyMembership({
             id: user.id,
             name: user.name,
         });
@@ -573,7 +578,7 @@ let AuthService = AuthService_1 = class AuthService {
         if (!user) {
             throw new common_1.UnauthorizedException('Sessao invalida.');
         }
-        await this.ensureOwnerFamilyAndMembership({
+        await this.ensureSessionFamilyMembership({
             id: user.id,
             name: user.name,
         });
@@ -658,6 +663,15 @@ let AuthService = AuthService_1 = class AuthService {
         }
         return 'owner';
     }
+    rolePriority(role) {
+        if (role === 'owner') {
+            return 0;
+        }
+        if (role === 'admin') {
+            return 1;
+        }
+        return 2;
+    }
     async ensureOwnerFamilyAndMembership(user) {
         let family = await this.prisma.family.findUnique({
             where: { ownerUserId: user.id },
@@ -710,11 +724,122 @@ let AuthService = AuthService_1 = class AuthService {
             update: {},
         });
     }
+    async ensureSessionFamilyMembership(user) {
+        const existingMembership = await this.prisma.familyMember.findFirst({
+            where: { userId: user.id },
+            select: { id: true },
+        });
+        if (existingMembership) {
+            return;
+        }
+        await this.ensureOwnerFamilyAndMembership(user);
+    }
+    async linkUserToPendingFamilyInvitations(user) {
+        const pendingInvitations = await this.prisma.familyInvitation.findMany({
+            where: {
+                inviteeEmail: this.normalizeEmail(user.email),
+                status: client_1.FamilyInvitationStatus.PENDING,
+            },
+            select: {
+                id: true,
+                familyId: true,
+            },
+        });
+        if (!pendingInvitations.length) {
+            return;
+        }
+        const now = new Date();
+        await this.prisma.$transaction(async (tx) => {
+            for (const invitation of pendingInvitations) {
+                await tx.familyMember.upsert({
+                    where: {
+                        familyId_userId: {
+                            familyId: invitation.familyId,
+                            userId: user.id,
+                        },
+                    },
+                    create: {
+                        familyId: invitation.familyId,
+                        userId: user.id,
+                        role: client_1.FamilyMemberRole.VIEWER,
+                        onboardingDismissedAt: now,
+                    },
+                    update: {},
+                });
+            }
+            await tx.familyInvitation.updateMany({
+                where: {
+                    id: {
+                        in: pendingInvitations.map((invitation) => invitation.id),
+                    },
+                    status: client_1.FamilyInvitationStatus.PENDING,
+                },
+                data: {
+                    status: client_1.FamilyInvitationStatus.ACCEPTED,
+                    respondedAt: now,
+                },
+            });
+        });
+    }
     toPublicUser(user) {
         return {
             id: user.id,
             name: user.name,
             email: user.email,
+        };
+    }
+    async buildSessionFamilySnapshot(userId) {
+        const membership = await this.prisma.familyMember.findFirst({
+            where: { userId },
+            orderBy: {
+                createdAt: 'asc',
+            },
+            include: {
+                family: {
+                    select: {
+                        id: true,
+                        name: true,
+                        members: {
+                            select: {
+                                userId: true,
+                                role: true,
+                                user: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        email: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        if (!membership) {
+            return null;
+        }
+        const members = membership.family.members
+            .map((familyMember) => ({
+            id: familyMember.user.id,
+            name: familyMember.user.name,
+            email: familyMember.user.email,
+            role: this.mapFamilyRole(familyMember.role),
+            isCurrentUser: familyMember.userId === userId,
+        }))
+            .sort((firstMember, secondMember) => {
+            const roleDifference = this.rolePriority(firstMember.role) - this.rolePriority(secondMember.role);
+            if (roleDifference !== 0) {
+                return roleDifference;
+            }
+            return firstMember.name.localeCompare(secondMember.name, 'pt-BR');
+        });
+        return {
+            id: membership.family.id,
+            name: membership.family.name,
+            memberCount: members.length,
+            role: this.mapFamilyRole(membership.role),
+            members,
         };
     }
     generateNumericCode() {
@@ -772,10 +897,12 @@ let AuthService = AuthService_1 = class AuthService {
         }
     }
     async buildAuthResponse(user) {
-        await this.ensureOwnerFamilyAndMembership(user);
+        await this.ensureSessionFamilyMembership(user);
+        const family = await this.buildSessionFamilySnapshot(user.id);
         const tokens = await this.issueTokenPair(user);
         return {
             user: this.toPublicUser(user),
+            family,
             ...tokens,
         };
     }

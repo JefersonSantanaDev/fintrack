@@ -42,8 +42,11 @@ export interface PublicUser {
   email: string;
 }
 
+export type FamilyRole = 'owner' | 'admin' | 'viewer';
+
 export interface AuthResponse {
   user: PublicUser;
+  family: SessionFamilySnapshot | null;
   accessToken: string;
   refreshToken: string;
 }
@@ -65,12 +68,28 @@ export interface FamilySnapshot {
   id: string;
   name: string;
   memberCount: number;
-  role: 'owner' | 'admin' | 'viewer';
+  role: FamilyRole;
 }
 
 export interface FamilyOnboardingStatus {
   family: FamilySnapshot | null;
   shouldShowOnboarding: boolean;
+}
+
+export interface SessionFamilyMemberSnapshot {
+  id: string;
+  name: string;
+  email: string;
+  role: FamilyRole;
+  isCurrentUser: boolean;
+}
+
+export interface SessionFamilySnapshot {
+  id: string;
+  name: string;
+  memberCount: number;
+  role: FamilyRole;
+  members: SessionFamilyMemberSnapshot[];
 }
 
 export interface FamilyOnboardingInvitation {
@@ -316,6 +335,8 @@ export class AuthService {
       throw error;
     }
 
+    await this.linkUserToPendingFamilyInvitations(user);
+
     await this.prisma.signupVerification.delete({ where: { email } });
 
     return this.buildAuthResponse(user);
@@ -525,9 +546,13 @@ export class AuthService {
       throw new UnauthorizedException('Sessao invalida.');
     }
 
-    await this.ensureOwnerFamilyAndMembership(user);
+    await this.ensureSessionFamilyMembership(user);
+    const family = await this.buildSessionFamilySnapshot(user.id);
 
-    return { user: this.toPublicUser(user) };
+    return {
+      user: this.toPublicUser(user),
+      family,
+    };
   }
 
   async getFamilyOnboardingStatus(userId: string): Promise<FamilyOnboardingStatus> {
@@ -543,7 +568,7 @@ export class AuthService {
       throw new UnauthorizedException('Sessao invalida.');
     }
 
-    await this.ensureOwnerFamilyAndMembership({
+    await this.ensureSessionFamilyMembership({
       id: user.id,
       name: user.name,
     });
@@ -612,7 +637,7 @@ export class AuthService {
       throw new UnauthorizedException('Sessao invalida.');
     }
 
-    await this.ensureOwnerFamilyAndMembership({
+    await this.ensureSessionFamilyMembership({
       id: user.id,
       name: user.name,
     });
@@ -757,7 +782,7 @@ export class AuthService {
       throw new UnauthorizedException('Sessao invalida.');
     }
 
-    await this.ensureOwnerFamilyAndMembership({
+    await this.ensureSessionFamilyMembership({
       id: user.id,
       name: user.name,
     });
@@ -862,7 +887,7 @@ export class AuthService {
     return `Familia de ${firstName}`;
   }
 
-  private mapFamilyRole(role: FamilyMemberRole): FamilySnapshot['role'] {
+  private mapFamilyRole(role: FamilyMemberRole): FamilyRole {
     if (role === FamilyMemberRole.ADMIN) {
       return 'admin';
     }
@@ -872,6 +897,18 @@ export class AuthService {
     }
 
     return 'owner';
+  }
+
+  private rolePriority(role: FamilyRole) {
+    if (role === 'owner') {
+      return 0;
+    }
+
+    if (role === 'admin') {
+      return 1;
+    }
+
+    return 2;
   }
 
   private async ensureOwnerFamilyAndMembership(user: Pick<User, 'id' | 'name'>) {
@@ -930,11 +967,139 @@ export class AuthService {
     });
   }
 
+  private async ensureSessionFamilyMembership(user: Pick<User, 'id' | 'name'>) {
+    const existingMembership = await this.prisma.familyMember.findFirst({
+      where: { userId: user.id },
+      select: { id: true },
+    });
+
+    if (existingMembership) {
+      return;
+    }
+
+    await this.ensureOwnerFamilyAndMembership(user);
+  }
+
+  private async linkUserToPendingFamilyInvitations(user: Pick<User, 'id' | 'email'>) {
+    const pendingInvitations = await this.prisma.familyInvitation.findMany({
+      where: {
+        inviteeEmail: this.normalizeEmail(user.email),
+        status: FamilyInvitationStatus.PENDING,
+      },
+      select: {
+        id: true,
+        familyId: true,
+      },
+    });
+
+    if (!pendingInvitations.length) {
+      return;
+    }
+
+    const now = new Date();
+
+    await this.prisma.$transaction(async tx => {
+      for (const invitation of pendingInvitations) {
+        await tx.familyMember.upsert({
+          where: {
+            familyId_userId: {
+              familyId: invitation.familyId,
+              userId: user.id,
+            },
+          },
+          create: {
+            familyId: invitation.familyId,
+            userId: user.id,
+            role: FamilyMemberRole.VIEWER,
+            onboardingDismissedAt: now,
+          },
+          update: {},
+        });
+      }
+
+      await tx.familyInvitation.updateMany({
+        where: {
+          id: {
+            in: pendingInvitations.map((invitation) => invitation.id),
+          },
+          status: FamilyInvitationStatus.PENDING,
+        },
+        data: {
+          status: FamilyInvitationStatus.ACCEPTED,
+          respondedAt: now,
+        },
+      });
+    });
+  }
+
   private toPublicUser(user: User): PublicUser {
     return {
       id: user.id,
       name: user.name,
       email: user.email,
+    };
+  }
+
+  private async buildSessionFamilySnapshot(
+    userId: string,
+  ): Promise<SessionFamilySnapshot | null> {
+    const membership = await this.prisma.familyMember.findFirst({
+      where: { userId },
+      orderBy: {
+        createdAt: 'asc',
+      },
+      include: {
+        family: {
+          select: {
+            id: true,
+            name: true,
+            members: {
+              select: {
+                userId: true,
+                role: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!membership) {
+      return null;
+    }
+
+    const members = membership.family.members
+      .map((familyMember) => ({
+        id: familyMember.user.id,
+        name: familyMember.user.name,
+        email: familyMember.user.email,
+        role: this.mapFamilyRole(familyMember.role),
+        isCurrentUser: familyMember.userId === userId,
+      }))
+      .sort((firstMember, secondMember) => {
+        const roleDifference =
+          this.rolePriority(firstMember.role) - this.rolePriority(secondMember.role);
+
+        if (roleDifference !== 0) {
+          return roleDifference;
+        }
+
+        return firstMember.name.localeCompare(secondMember.name, 'pt-BR');
+      });
+
+    return {
+      id: membership.family.id,
+      name: membership.family.name,
+      memberCount: members.length,
+      role: this.mapFamilyRole(membership.role),
+      members,
     };
   }
 
@@ -1040,12 +1205,14 @@ export class AuthService {
   }
 
   private async buildAuthResponse(user: User): Promise<AuthResponse> {
-    await this.ensureOwnerFamilyAndMembership(user);
+    await this.ensureSessionFamilyMembership(user);
+    const family = await this.buildSessionFamilySnapshot(user.id);
 
     const tokens = await this.issueTokenPair(user);
 
     return {
       user: this.toPublicUser(user),
+      family,
       ...tokens,
     };
   }

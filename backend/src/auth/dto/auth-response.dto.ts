@@ -29,6 +29,13 @@ export class AuthResponseDto {
   user!: PublicUserDto;
 
   @ApiProperty({
+    description: 'Familia ativa da sessao com lista de membros.',
+    type: () => SessionFamilySnapshotDto,
+    nullable: true,
+  })
+  family!: SessionFamilySnapshotDto | null;
+
+  @ApiProperty({
     description: 'JWT de acesso para endpoints protegidos.',
     example:
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.access-token-payload.signature',
@@ -108,6 +115,73 @@ export class FamilySnapshotDto {
     enum: ['owner', 'admin', 'viewer'],
   })
   role!: 'owner' | 'admin' | 'viewer';
+}
+
+export class SessionFamilyMemberSnapshotDto {
+  @ApiProperty({
+    description: 'Identificador do membro na familia.',
+    example: '4c66fc27-37f6-4fdd-b9de-36db78350d7f',
+  })
+  id!: string;
+
+  @ApiProperty({
+    description: 'Nome de exibicao do membro da familia.',
+    example: 'Jeferson Santana',
+  })
+  name!: string;
+
+  @ApiProperty({
+    description: 'Email do membro da familia.',
+    format: 'email',
+    example: 'jeferson@fintrack.app',
+  })
+  email!: string;
+
+  @ApiProperty({
+    description: 'Papel do membro dentro da familia.',
+    example: 'owner',
+    enum: ['owner', 'admin', 'viewer'],
+  })
+  role!: 'owner' | 'admin' | 'viewer';
+
+  @ApiProperty({
+    description: 'Indica se esse membro e o usuario logado.',
+    example: true,
+  })
+  isCurrentUser!: boolean;
+}
+
+export class SessionFamilySnapshotDto {
+  @ApiProperty({
+    description: 'Identificador unico da familia ativa da sessao.',
+    example: '7f047e08-3abf-4dc0-a814-c87d46f4f66f',
+  })
+  id!: string;
+
+  @ApiProperty({
+    description: 'Nome de exibicao da familia.',
+    example: 'Familia Santana',
+  })
+  name!: string;
+
+  @ApiProperty({
+    description: 'Quantidade total de membros nessa familia.',
+    example: 2,
+  })
+  memberCount!: number;
+
+  @ApiProperty({
+    description: 'Papel do usuario autenticado na familia.',
+    example: 'owner',
+    enum: ['owner', 'admin', 'viewer'],
+  })
+  role!: 'owner' | 'admin' | 'viewer';
+
+  @ApiProperty({
+    description: 'Membros vinculados a familia ativa.',
+    type: [SessionFamilyMemberSnapshotDto],
+  })
+  members!: SessionFamilyMemberSnapshotDto[];
 }
 
 export class FamilyOnboardingStatusDto {
@@ -191,6 +265,13 @@ export class MeResponseDto {
     type: PublicUserDto,
   })
   user!: PublicUserDto;
+
+  @ApiProperty({
+    description: 'Familia ativa da sessao com lista de membros.',
+    type: () => SessionFamilySnapshotDto,
+    nullable: true,
+  })
+  family!: SessionFamilySnapshotDto | null;
 }
 
 export class LogoutResponseDto {

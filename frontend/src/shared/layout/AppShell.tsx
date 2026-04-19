@@ -3,10 +3,13 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   ArrowLeftRight,
   ChevronRight,
+  Crown,
+  Eye,
   LayoutDashboard,
   Moon,
   PiggyBank,
   Settings,
+  ShieldCheck,
   Sun,
   Target,
   Users,
@@ -72,6 +75,40 @@ const routeMeta = [
   },
 ]
 
+type FamilyRole = 'owner' | 'admin' | 'viewer'
+
+const familyRoleLabel: Record<FamilyRole, string> = {
+  owner: 'Owner',
+  admin: 'Admin',
+  viewer: 'Viewer',
+}
+
+const familyRoleBadgeVariant: Record<FamilyRole, 'success' | 'secondary' | 'outline'> = {
+  owner: 'success',
+  admin: 'secondary',
+  viewer: 'outline',
+}
+
+const familyRoleIcon: Record<FamilyRole, typeof Crown> = {
+  owner: Crown,
+  admin: ShieldCheck,
+  viewer: Eye,
+}
+
+function memberInitials(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+
+  if (!words.length) {
+    return 'FT'
+  }
+
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase()
+  }
+
+  return `${words[0][0] ?? ''}${words[1][0] ?? ''}`.toUpperCase()
+}
+
 function pageMeta(pathname: string) {
   return routeMeta.find(item => pathname.startsWith(item.match)) ?? routeMeta[0]
 }
@@ -123,6 +160,9 @@ export function AppShell() {
   }, [])
 
   const meta = pageMeta(location.pathname)
+  const familyMembers = user?.family?.members ?? []
+  const visibleFamilyMembers = familyMembers.slice(0, 4)
+  const hiddenMembersCount = Math.max(0, familyMembers.length - visibleFamilyMembers.length)
 
   const handleLogout = async () => {
     await logout()
@@ -136,8 +176,8 @@ export function AppShell() {
       </div>
 
       <div className="mx-auto flex min-h-screen max-w-[2200px] flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <header className="rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-level-1)]">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <header className="rounded-lg border border-border bg-card p-3 shadow-[var(--shadow-level-1)] sm:p-4">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 <FinTrackLogo />
@@ -157,41 +197,116 @@ export function AppShell() {
                   {meta.description}
                 </p>
               </div>
+
+              {user?.family ? (
+                <div className="rounded-sm border border-border bg-background/70 p-3 sm:p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      Familia conectada
+                    </p>
+                    <Badge variant="outline">
+                      {user.family.memberCount}{' '}
+                      {user.family.memberCount === 1 ? 'membro' : 'membros'}
+                    </Badge>
+                  </div>
+
+                  {visibleFamilyMembers.length > 0 ? (
+                    <div className="mt-3 grid gap-2 md:grid-cols-2">
+                      {visibleFamilyMembers.map(member => {
+                        const RoleIcon = familyRoleIcon[member.role]
+
+                        return (
+                          <div
+                            key={member.id}
+                            className="rounded-sm border border-border bg-card/70 p-3"
+                          >
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                              <div className="flex min-w-0 items-center gap-3">
+                                <span className="flex size-8 shrink-0 items-center justify-center rounded-sm border border-primary/35 bg-primary/10 text-xs font-bold text-primary">
+                                  {memberInitials(member.name)}
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="break-words text-sm font-semibold leading-tight text-foreground">
+                                    {member.name}
+                                    {member.isCurrentUser ? ' (voce)' : ''}
+                                  </p>
+                                  <p className="break-all text-xs text-muted-foreground sm:truncate">
+                                    {member.email}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <Badge
+                                variant={familyRoleBadgeVariant[member.role]}
+                                className="w-fit shrink-0 self-start"
+                              >
+                                <RoleIcon className="size-3" />
+                                {familyRoleLabel[member.role]}
+                              </Badge>
+                            </div>
+                          </div>
+                        )
+                      })}
+
+                      {hiddenMembersCount > 0 ? (
+                        <div className="rounded-sm border border-dashed border-border bg-background/40 p-3">
+                          <p className="text-sm font-medium text-foreground">
+                            +{hiddenMembersCount}{' '}
+                            {hiddenMembersCount === 1 ? 'membro adicional' : 'membros adicionais'}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Veja todos na aba Familia.
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      Nenhum membro encontrado ainda para esta familia.
+                    </p>
+                  )}
+                </div>
+              ) : null}
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Badge variant="outline" className="max-w-max">
-                {user?.name ?? 'Conta'}
+            <div className="grid w-full gap-2 sm:flex sm:w-auto sm:items-center lg:self-start">
+              <Badge variant="outline" className="max-w-full justify-start sm:max-w-[320px]">
+                <span className="truncate">{user?.name ?? 'Conta'}</span>
               </Badge>
-              <Button className="justify-start sm:justify-center">Nova despesa</Button>
-              <Button
-                variant="ghost"
-                className="justify-start sm:justify-center"
-                onClick={handleLogout}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Saindo...' : 'Sair'}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label={
-                  themeMode === 'dark'
-                    ? 'Ativar tema claro'
-                    : 'Ativar tema escuro'
-                }
-                onClick={() =>
-                  setThemeMode(current =>
-                    current === 'dark' ? 'light' : 'dark'
-                  )
-                }
-              >
-                {themeMode === 'dark' ? (
-                  <Sun className="size-4" />
-                ) : (
-                  <Moon className="size-4" />
-                )}
-              </Button>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+                <Button className="col-span-2 w-full justify-center sm:col-span-1 sm:w-auto">
+                  Nova despesa
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-center sm:w-auto"
+                  onClick={handleLogout}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Saindo...' : 'Sair'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="justify-self-end sm:justify-self-auto"
+                  aria-label={
+                    themeMode === 'dark'
+                      ? 'Ativar tema claro'
+                      : 'Ativar tema escuro'
+                  }
+                  onClick={() =>
+                    setThemeMode(current =>
+                      current === 'dark' ? 'light' : 'dark'
+                    )
+                  }
+                >
+                  {themeMode === 'dark' ? (
+                    <Sun className="size-4" />
+                  ) : (
+                    <Moon className="size-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </header>

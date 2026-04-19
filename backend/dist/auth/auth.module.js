@@ -11,7 +11,11 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const jwt_1 = require("@nestjs/jwt");
 const passport_1 = require("@nestjs/passport");
-const auth_controller_1 = require("./auth.controller");
+const auth_onboarding_controller_1 = require("./auth-onboarding.controller");
+const auth_password_controller_1 = require("./auth-password.controller");
+const auth_refresh_cookie_service_1 = require("./auth-refresh-cookie.service");
+const auth_session_controller_1 = require("./auth-session.controller");
+const auth_signup_controller_1 = require("./auth-signup.controller");
 const auth_service_1 = require("./auth.service");
 const login_attempts_service_1 = require("./login-attempts.service");
 const signup_mail_service_1 = require("./signup-mail.service");
@@ -22,8 +26,19 @@ exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [config_1.ConfigModule, passport_1.PassportModule, jwt_1.JwtModule.register({})],
-        controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService, login_attempts_service_1.LoginAttemptsService, signup_mail_service_1.SignUpMailService, jwt_strategy_1.JwtStrategy],
+        controllers: [
+            auth_signup_controller_1.AuthSignupController,
+            auth_password_controller_1.AuthPasswordController,
+            auth_session_controller_1.AuthSessionController,
+            auth_onboarding_controller_1.AuthOnboardingController,
+        ],
+        providers: [
+            auth_service_1.AuthService,
+            auth_refresh_cookie_service_1.AuthRefreshCookieService,
+            login_attempts_service_1.LoginAttemptsService,
+            signup_mail_service_1.SignUpMailService,
+            jwt_strategy_1.JwtStrategy,
+        ],
         exports: [auth_service_1.AuthService],
     })
 ], AuthModule);
