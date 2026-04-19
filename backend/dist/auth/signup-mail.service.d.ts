@@ -11,6 +11,11 @@ interface SendPasswordRecoveryRequestParams {
     token: string;
     expiresInMinutes: number;
 }
+interface SendFamilyInvitationParams {
+    email: string;
+    name: string;
+    inviterName: string;
+}
 export declare class SignUpMailService {
     private readonly configService;
     private readonly logger;
@@ -21,12 +26,15 @@ export declare class SignUpMailService {
     constructor(configService: ConfigService);
     sendSignUpCode({ email, name, code, expiresInMinutes, }: SendSignUpCodeParams): Promise<void>;
     sendPasswordRecoveryRequest({ email, name, token, expiresInMinutes, }: SendPasswordRecoveryRequestParams): Promise<void>;
+    sendFamilyInvitation({ email, name, inviterName, }: SendFamilyInvitationParams): Promise<void>;
     private parsePositiveNumber;
     private parseBoolean;
     private buildSignupCodeText;
     private buildSignupCodeHtml;
     private buildPasswordRecoveryText;
     private buildPasswordRecoveryHtml;
+    private buildFamilyInvitationText;
+    private buildFamilyInvitationHtml;
     private buildResetPasswordUrl;
     private buildLogoMarkSvg;
     private escapeHtml;

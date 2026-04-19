@@ -39,6 +39,38 @@ export interface ActionResponse {
   message: string
 }
 
+export interface FamilyOnboardingSummary {
+  id: string
+  name: string
+  memberCount: number
+  role: 'owner' | 'admin' | 'viewer'
+}
+
+export interface FamilyOnboardingStatus {
+  family: FamilyOnboardingSummary | null
+  shouldShowOnboarding: boolean
+}
+
+export interface FamilyOnboardingInviteMemberInput {
+  name: string
+  email: string
+}
+
+export interface FamilyOnboardingInvitation {
+  id: string
+  name: string
+  email: string
+  status: 'pending'
+}
+
+export interface FamilyOnboardingInviteMembersResponse {
+  success: boolean
+  message: string
+  sentCount: number
+  ignoredCount: number
+  invitations: FamilyOnboardingInvitation[]
+}
+
 export interface ConfirmPasswordRecoveryInput {
   token: string
   password: string
@@ -248,6 +280,43 @@ export async function confirmPasswordRecovery(input: ConfirmPasswordRecoveryInpu
     method: 'POST',
     body: JSON.stringify({ token, password }),
     errorMessage: 'Nao foi possivel redefinir a senha.',
+  })
+}
+
+export async function getFamilyOnboardingStatus() {
+  return apiRequest<FamilyOnboardingStatus>('/auth/onboarding/family', {
+    auth: true,
+    errorMessage: 'Nao foi possivel carregar o onboarding familiar.',
+  })
+}
+
+export async function dismissFamilyOnboarding() {
+  return apiRequest<ActionResponse>('/auth/onboarding/family/dismiss', {
+    method: 'POST',
+    auth: true,
+    errorMessage: 'Nao foi possivel ocultar o onboarding familiar.',
+  })
+}
+
+export async function inviteFamilyOnboardingMembers(
+  members: FamilyOnboardingInviteMemberInput[],
+) {
+  const normalizedMembers = members
+    .map(member => ({
+      name: member.name.trim(),
+      email: normalizeEmail(member.email),
+    }))
+    .filter(member => member.name.length > 0 && member.email.length > 0)
+
+  if (!normalizedMembers.length) {
+    throw new Error('Adicione pelo menos um membro para convidar.')
+  }
+
+  return apiRequest<FamilyOnboardingInviteMembersResponse>('/auth/onboarding/family/invitations', {
+    method: 'POST',
+    auth: true,
+    body: JSON.stringify({ members: normalizedMembers }),
+    errorMessage: 'Nao foi possivel preparar os convites agora.',
   })
 }
 

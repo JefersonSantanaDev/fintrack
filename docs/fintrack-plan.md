@@ -14,6 +14,7 @@ O `fintrack` deve permitir:
 - controlar orcamento mensal
 - definir metas financeiras
 - compartilhar a gestao com membros da familia
+- iniciar o uso de forma individual e evoluir para colaboracao familiar sem friccao
 
 ## Decisao de stack
 
@@ -42,6 +43,20 @@ O `fintrack` deve permitir:
 - `Fastify` entrega performance e boa integracao com schema validation
 - `Prisma` melhora produtividade com tipagem e migrations
 - `PostgreSQL` e ideal para regras relacionais, relatorios e consistencia financeira
+
+## Decisao de onboarding familiar (MVP)
+
+Para equilibrar adocao rapida com a visao de produto colaborativo, o onboarding familiar segue este padrao:
+
+- na primeira autenticacao valida, o backend cria automaticamente uma familia padrao do usuario;
+- o proprio usuario entra como `owner` nessa familia;
+- no primeiro acesso logado, o sistema abre um modal de onboarding obrigatorio;
+- o modal exige escolha explicita entre:
+  - convidar membros da familia agora;
+  - continuar sozinho por enquanto.
+- enquanto o modal nao for concluido, o usuario nao interage com o restante da interface.
+
+Com isso, o produto nao trava o primeiro uso e ja nasce preparado para isolamento por `family_id`.
 
 ## Estrutura sugerida do repositorio
 
@@ -170,7 +185,7 @@ frontend/src/
 - `id`
 - `family_id`
 - `user_id`
-- `role` (`owner`, `admin`, `member`, `viewer`)
+- `role` (`owner`, `admin`, `viewer`)
 - `created_at`
 
 #### accounts
@@ -253,10 +268,11 @@ frontend/src/
 
 ### Fase 3 - Nucleo familiar
 
-- criar familia
+- criar familia automaticamente no primeiro acesso autenticado
 - convidar membros
 - listar membros
 - definir papeis
+- permitir pular onboarding de convite sem bloquear o uso solo
 - garantir isolamento por `family_id`
 
 ### Fase 4 - Financeiro basico
@@ -296,6 +312,7 @@ frontend/src/
 
 - login funcionando
 - familia criada
+- onboarding de convite familiar obrigatorio no primeiro acesso logado
 - contas cadastradas
 - categorias cadastradas
 - receitas e despesas cadastradas

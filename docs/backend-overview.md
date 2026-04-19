@@ -1,6 +1,6 @@
 # Backend Overview - FinTrack
 
-Ultima atualizacao: 2026-04-17
+Ultima atualizacao: 2026-04-18
 
 ## 1) Objetivo deste documento
 
@@ -66,6 +66,8 @@ Auth:
 - `POST /auth/refresh`
 - `POST /auth/logout`
 - `GET /auth/me` (protegida por JWT guard)
+- `GET /auth/onboarding/family` (protegida por JWT guard)
+- `POST /auth/onboarding/family/dismiss` (protegida por JWT guard)
 
 ## 6) Fluxo de autenticacao
 
@@ -84,8 +86,23 @@ Auth:
 1. valida entrada (`LoginDto`);
 2. busca usuario por email;
 3. compara senha com bcrypt;
-4. gera novo par de tokens;
-5. persiste hash do refresh token.
+4. garante familia padrao + membership owner para o usuario;
+5. gera novo par de tokens;
+6. persiste hash do refresh token.
+
+### Onboarding familiar (dashboard)
+
+1. `GET /auth/onboarding/family` retorna o estado do onboarding de convite;
+2. se usuario owner tiver apenas 1 membro e nao tiver ocultado onboarding, `shouldShowOnboarding=true`;
+3. o frontend usa esse status para abrir um modal bloqueante no primeiro acesso logado;
+4. `POST /auth/onboarding/family/dismiss` marca onboarding como concluido/ocultado.
+
+### Provisionamento automatico de familia
+
+- No primeiro acesso autenticado (signup verify/login/refresh/me), o backend garante:
+  - familia owner vinculada ao usuario;
+  - membership owner na familia.
+- Isso evita friccao no cadastro e preserva a arquitetura `family_id` desde o inicio.
 
 ### Recuperacao de senha (solicitacao)
 
@@ -131,11 +148,15 @@ Todos passam pela validacao global. Isso reduz erro de contrato e protege a API 
 
 Schema atual em `prisma/schema.prisma`.
 
-Tabelas do MVP:
+Tabelas atuais:
 
 - `users`
 - `refresh_tokens`
 - `signup_verifications`
+- `password_reset_tokens`
+- `login_attempts`
+- `families`
+- `family_members`
 
 Pontos importantes:
 
@@ -144,10 +165,15 @@ Pontos importantes:
 - `jti` unico por token;
 - indices em `user_id` e `expires_at`;
 - relacao `refresh_tokens -> users` com `onDelete: Cascade`.
+- relacoes familiares por `family_id` para isolamento de dados financeiros.
 
-Migration inicial:
+Migrations principais:
 
 - `prisma/migrations/20260412163542_init_auth/migration.sql`
+- `prisma/migrations/20260417043000_add_signup_verification/migration.sql`
+- `prisma/migrations/20260418094000_add_password_reset_tokens/migration.sql`
+- `prisma/migrations/20260418113000_add_login_attempts/migration.sql`
+- `prisma/migrations/20260418124000_add_family_onboarding/migration.sql`
 
 ## 9) Variaveis de ambiente
 
@@ -249,15 +275,16 @@ Ja implementado:
 - autenticacao completa com refresh token e revogacao
 - refresh token em cookie httpOnly
 - rota protegida (`/auth/me`)
+- onboarding familiar com gate obrigatorio no primeiro acesso logado (decisao: convidar ou seguir solo)
 - execucao dockerizada da stack completa
 
 Proximos modulos recomendados (ordem):
 
-1. `families` (estrutura da familia e membros)
-2. `accounts` (contas e saldos)
-3. `transactions` (lancamentos e fluxo de caixa)
-4. `budgets` (orcamento)
-5. `goals` (metas)
+1. `accounts` (contas e saldos)
+2. `transactions` (lancamentos e fluxo de caixa)
+3. `budgets` (orcamento)
+4. `goals` (metas)
+5. `families` (convites, multiplas familias e gestao avancada de papeis)
 
 ## 14) Documentos relacionados
 

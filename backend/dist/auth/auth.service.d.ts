@@ -7,6 +7,7 @@ import { ForgotPasswordRequestDto } from './dto/forgot-password-request.dto';
 import { SignUpResendDto } from './dto/signup-resend.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { SignUpVerifyDto } from './dto/signup-verify.dto';
+import { FamilyOnboardingInviteMembersDto } from './dto/family-onboarding-invite.dto';
 import { LoginAttemptsService } from './login-attempts.service';
 import { SignUpMailService } from './signup-mail.service';
 export interface PublicUser {
@@ -29,6 +30,27 @@ export interface SignUpChallengeResponse {
 export interface ActionResponse {
     success: boolean;
     message: string;
+}
+export interface FamilySnapshot {
+    id: string;
+    name: string;
+    memberCount: number;
+    role: 'owner' | 'admin' | 'viewer';
+}
+export interface FamilyOnboardingStatus {
+    family: FamilySnapshot | null;
+    shouldShowOnboarding: boolean;
+}
+export interface FamilyOnboardingInvitation {
+    id: string;
+    name: string;
+    email: string;
+    status: 'pending';
+}
+export interface FamilyOnboardingInviteMembersResponse extends ActionResponse {
+    sentCount: number;
+    ignoredCount: number;
+    invitations: FamilyOnboardingInvitation[];
 }
 export declare class AuthService {
     private readonly prisma;
@@ -62,11 +84,18 @@ export declare class AuthService {
     getProfile(userId: string): Promise<{
         user: PublicUser;
     }>;
+    getFamilyOnboardingStatus(userId: string): Promise<FamilyOnboardingStatus>;
+    inviteFamilyMembersFromOnboarding(userId: string, dto: FamilyOnboardingInviteMembersDto): Promise<FamilyOnboardingInviteMembersResponse>;
+    dismissFamilyOnboarding(userId: string): Promise<ActionResponse>;
     private parsePositiveNumber;
     private parseCodeLength;
     private normalizeEmail;
+    private normalizeOnboardingInvites;
     private maskEmailForLog;
     private hashOpaqueToken;
+    private buildDefaultFamilyName;
+    private mapFamilyRole;
+    private ensureOwnerFamilyAndMembership;
     private toPublicUser;
     private generateNumericCode;
     private toSignUpChallengeResponse;

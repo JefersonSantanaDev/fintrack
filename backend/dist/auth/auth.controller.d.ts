@@ -1,11 +1,12 @@
 import { ConfigService } from '@nestjs/config';
-import { ActionResponseDto, AuthResponseDto, LogoutResponseDto, MeResponseDto, SignUpChallengeResponseDto } from './dto/auth-response.dto';
+import { ActionResponseDto, AuthResponseDto, FamilyOnboardingInviteMembersResponseDto, FamilyOnboardingStatusDto, LogoutResponseDto, MeResponseDto, SignUpChallengeResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordConfirmDto } from './dto/forgot-password-confirm.dto';
 import { ForgotPasswordRequestDto } from './dto/forgot-password-request.dto';
 import { SignUpResendDto } from './dto/signup-resend.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { SignUpVerifyDto } from './dto/signup-verify.dto';
+import { FamilyOnboardingInviteMembersDto } from './dto/family-onboarding-invite.dto';
 import { AuthService } from './auth.service';
 import type { AuthenticatedUser } from './types/auth-user.type';
 import type { FastifyReply, FastifyRequest } from 'fastify';
@@ -31,4 +32,7 @@ export declare class AuthController {
     refresh(request: FastifyRequest, reply: FastifyReply): Promise<AuthResponseDto>;
     logout(request: FastifyRequest, reply: FastifyReply): Promise<LogoutResponseDto>;
     me(user: AuthenticatedUser): Promise<MeResponseDto>;
+    familyOnboardingStatus(user: AuthenticatedUser): Promise<FamilyOnboardingStatusDto>;
+    dismissFamilyOnboarding(user: AuthenticatedUser): Promise<ActionResponseDto>;
+    inviteFamilyMembersFromOnboarding(user: AuthenticatedUser, dto: FamilyOnboardingInviteMembersDto): Promise<FamilyOnboardingInviteMembersResponseDto>;
 }

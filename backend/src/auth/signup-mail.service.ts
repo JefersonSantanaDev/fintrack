@@ -17,6 +17,12 @@ interface SendPasswordRecoveryRequestParams {
   expiresInMinutes: number;
 }
 
+interface SendFamilyInvitationParams {
+  email: string;
+  name: string;
+  inviterName: string;
+}
+
 @Injectable()
 export class SignUpMailService {
   private readonly logger = new Logger(SignUpMailService.name);
@@ -139,6 +145,37 @@ export class SignUpMailService {
       );
       throw new InternalServerErrorException(
         'Nao foi possivel enviar o email de recuperacao agora.',
+      );
+    }
+  }
+
+  async sendFamilyInvitation({
+    email,
+    name,
+    inviterName,
+  }: SendFamilyInvitationParams) {
+    if (this.logCodeInDev) {
+      this.logger.log(`Convite familiar preparado para ${email}.`);
+    }
+
+    if (!this.transporter) {
+      return;
+    }
+
+    const message: Mail.Options = {
+      from: this.from,
+      to: email,
+      subject: 'FinTrack - Convite para sua familia financeira',
+      text: this.buildFamilyInvitationText(name, inviterName),
+      html: this.buildFamilyInvitationHtml(name, inviterName),
+    };
+
+    try {
+      await this.transporter.sendMail(message);
+    } catch (error) {
+      this.logger.error('Falha ao enviar email de convite familiar.', error);
+      throw new InternalServerErrorException(
+        'Nao foi possivel enviar o convite familiar agora.',
       );
     }
   }
@@ -395,6 +432,101 @@ export class SignUpMailService {
                       </p>
                       <p style="margin:0;font-size:13px;line-height:1.55;color:#a0a0a0;">
                         Ignore este email se nao reconhece esta solicitacao. Nenhuma mudanca sera feita sem confirmacao.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+  }
+
+  private buildFamilyInvitationText(name: string, inviterName: string) {
+    return [
+      `Ola, ${name}.`,
+      '',
+      `${inviterName} convidou voce para participar da familia no FinTrack.`,
+      'Ao criar sua conta com este email, voce podera colaborar no painel financeiro.',
+      '',
+      `Acesse: ${this.frontendUrl}`,
+      '',
+      'Se voce nao reconhece este convite, ignore este email.',
+    ].join('\n');
+  }
+
+  private buildFamilyInvitationHtml(name: string, inviterName: string) {
+    const safeName = this.escapeHtml(name);
+    const safeInviterName = this.escapeHtml(inviterName);
+    const safeFrontendUrl = this.escapeHtml(this.frontendUrl);
+
+    return `<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>FinTrack - Convite familiar</title>
+  </head>
+  <body style="margin:0;padding:0;background:#000000;color:#ffffff;font-family:Inter,Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#000000;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#000000;border:1px solid #414141;border-radius:8px;overflow:hidden;">
+            <tr>
+              <td style="padding:28px 28px 8px 28px;">
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="vertical-align:middle;">
+                      ${this.buildLogoMarkSvg()}
+                    </td>
+                    <td style="width:12px;"></td>
+                    <td style="vertical-align:middle;">
+                      <p style="margin:0;font-size:28px;line-height:1;font-weight:800;color:#ffffff;">FinTrack</p>
+                      <p style="margin:6px 0 0 0;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:#a0a0a0;">Familia e Planejamento</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 6px 28px;">
+                <h1 style="margin:0;font-size:34px;line-height:1.08;font-weight:900;color:#ffffff;">
+                  Voce recebeu um convite familiar
+                </h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px;">
+                <p style="margin:0 0 16px 0;font-size:16px;line-height:1.55;color:#a0a0a0;">
+                  Ola, ${safeName}. ${safeInviterName} convidou voce para participar da familia financeira no FinTrack.
+                </p>
+                <p style="margin:0 0 16px 0;font-size:14px;line-height:1.55;color:#a0a0a0;">
+                  Crie sua conta com este email para entrar na colaboracao familiar.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 22px 28px;">
+                <a href="${safeFrontendUrl}" style="display:inline-block;padding:12px 18px;border-radius:4px;border:1px solid #faff69;background:#faff69;color:#151515;font-size:15px;font-weight:700;text-decoration:none;">
+                  Abrir FinTrack
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 26px 28px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#141414;border:1px solid #414141;border-radius:8px;">
+                  <tr>
+                    <td style="padding:14px 16px;">
+                      <p style="margin:0 0 8px 0;font-size:13px;line-height:1.45;color:#ffffff;font-weight:700;">
+                        Nao reconhece este convite?
+                      </p>
+                      <p style="margin:0;font-size:13px;line-height:1.55;color:#a0a0a0;">
+                        Ignore este email. Nenhuma acao sera tomada sem cadastro e autenticacao.
                       </p>
                     </td>
                   </tr>

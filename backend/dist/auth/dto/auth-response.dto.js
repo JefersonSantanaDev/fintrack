@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApiValidationErrorResponseDto = exports.ApiErrorResponseDto = exports.LogoutResponseDto = exports.MeResponseDto = exports.ActionResponseDto = exports.SignUpChallengeResponseDto = exports.AuthResponseDto = exports.PublicUserDto = void 0;
+exports.ApiValidationErrorResponseDto = exports.ApiErrorResponseDto = exports.LogoutResponseDto = exports.MeResponseDto = exports.FamilyOnboardingInviteMembersResponseDto = exports.FamilyOnboardingInvitationDto = exports.FamilyOnboardingStatusDto = exports.FamilySnapshotDto = exports.ActionResponseDto = exports.SignUpChallengeResponseDto = exports.AuthResponseDto = exports.PublicUserDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 class PublicUserDto {
     id;
@@ -121,6 +121,142 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], ActionResponseDto.prototype, "message", void 0);
+class FamilySnapshotDto {
+    id;
+    name;
+    memberCount;
+    role;
+}
+exports.FamilySnapshotDto = FamilySnapshotDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Identificador unico da familia ativa da sessao.',
+        example: '7f047e08-3abf-4dc0-a814-c87d46f4f66f',
+    }),
+    __metadata("design:type", String)
+], FamilySnapshotDto.prototype, "id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome de exibicao da familia.',
+        example: 'Familia Santana',
+    }),
+    __metadata("design:type", String)
+], FamilySnapshotDto.prototype, "name", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Quantidade total de membros nessa familia.',
+        example: 1,
+    }),
+    __metadata("design:type", Number)
+], FamilySnapshotDto.prototype, "memberCount", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Papel do usuario autenticado na familia.',
+        example: 'owner',
+        enum: ['owner', 'admin', 'viewer'],
+    }),
+    __metadata("design:type", String)
+], FamilySnapshotDto.prototype, "role", void 0);
+class FamilyOnboardingStatusDto {
+    family;
+    shouldShowOnboarding;
+}
+exports.FamilyOnboardingStatusDto = FamilyOnboardingStatusDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Resumo da familia associada ao usuario logado.',
+        type: FamilySnapshotDto,
+        nullable: true,
+    }),
+    __metadata("design:type", Object)
+], FamilyOnboardingStatusDto.prototype, "family", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica se o card de onboarding de convite familiar deve aparecer no dashboard.',
+        example: true,
+    }),
+    __metadata("design:type", Boolean)
+], FamilyOnboardingStatusDto.prototype, "shouldShowOnboarding", void 0);
+class FamilyOnboardingInvitationDto {
+    id;
+    name;
+    email;
+    status;
+}
+exports.FamilyOnboardingInvitationDto = FamilyOnboardingInvitationDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Identificador unico do convite.',
+        example: '1f2f0931-942c-49a7-9f5b-5f946610f16f',
+    }),
+    __metadata("design:type", String)
+], FamilyOnboardingInvitationDto.prototype, "id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome da pessoa convidada.',
+        example: 'Maria Santana',
+    }),
+    __metadata("design:type", String)
+], FamilyOnboardingInvitationDto.prototype, "name", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Email da pessoa convidada.',
+        format: 'email',
+        example: 'maria@exemplo.com',
+    }),
+    __metadata("design:type", String)
+], FamilyOnboardingInvitationDto.prototype, "email", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Status do convite.',
+        enum: ['pending'],
+        example: 'pending',
+    }),
+    __metadata("design:type", String)
+], FamilyOnboardingInvitationDto.prototype, "status", void 0);
+class FamilyOnboardingInviteMembersResponseDto {
+    success;
+    message;
+    sentCount;
+    ignoredCount;
+    invitations;
+}
+exports.FamilyOnboardingInviteMembersResponseDto = FamilyOnboardingInviteMembersResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica processamento bem sucedido da operacao.',
+        example: true,
+    }),
+    __metadata("design:type", Boolean)
+], FamilyOnboardingInviteMembersResponseDto.prototype, "success", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Mensagem de retorno para o frontend.',
+        example: 'Convites preparados com sucesso.',
+    }),
+    __metadata("design:type", String)
+], FamilyOnboardingInviteMembersResponseDto.prototype, "message", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Quantidade de convites criados/atualizados.',
+        example: 2,
+    }),
+    __metadata("design:type", Number)
+], FamilyOnboardingInviteMembersResponseDto.prototype, "sentCount", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Quantidade de itens ignorados por duplicidade, auto-convite ou membro ja existente.',
+        example: 1,
+    }),
+    __metadata("design:type", Number)
+], FamilyOnboardingInviteMembersResponseDto.prototype, "ignoredCount", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Lista final de convites preparados no onboarding.',
+        type: [FamilyOnboardingInvitationDto],
+    }),
+    __metadata("design:type", Array)
+], FamilyOnboardingInviteMembersResponseDto.prototype, "invitations", void 0);
 class MeResponseDto {
     user;
 }

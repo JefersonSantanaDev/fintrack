@@ -93,6 +93,14 @@ Bearer SEU_ACCESS_TOKEN
 
 3. Execute `GET /api/auth/me`.
 
+### Testar onboarding familiar no dashboard
+
+1. Com access token autorizado, execute `GET /api/auth/onboarding/family`.
+2. Valide o retorno:
+   - `family` com `id`, `name`, `memberCount` e `role`;
+   - `shouldShowOnboarding` para decidir abrir modal bloqueante de onboarding no frontend.
+3. Para concluir/ocultar onboarding, execute `POST /api/auth/onboarding/family/dismiss`.
+
 ### Testar refresh (cookie httpOnly)
 
 1. Depois de login ou de `signup/start + signup/verify` no Swagger, use o mesmo navegador/sessao.

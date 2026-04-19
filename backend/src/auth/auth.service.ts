@@ -9,7 +9,12 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, User } from '@prisma/client';
+import {
+  FamilyInvitationStatus,
+  FamilyMemberRole,
+  Prisma,
+  User,
+} from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { createHash, randomBytes, randomInt, randomUUID } from 'crypto';
 import type { StringValue } from 'ms';
@@ -20,6 +25,10 @@ import { ForgotPasswordRequestDto } from './dto/forgot-password-request.dto';
 import { SignUpResendDto } from './dto/signup-resend.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { SignUpVerifyDto } from './dto/signup-verify.dto';
+import {
+  FamilyOnboardingInviteMemberDto,
+  FamilyOnboardingInviteMembersDto,
+} from './dto/family-onboarding-invite.dto';
 import { LoginAttemptsService } from './login-attempts.service';
 import { SignUpMailService } from './signup-mail.service';
 import {
@@ -50,6 +59,31 @@ export interface SignUpChallengeResponse {
 export interface ActionResponse {
   success: boolean;
   message: string;
+}
+
+export interface FamilySnapshot {
+  id: string;
+  name: string;
+  memberCount: number;
+  role: 'owner' | 'admin' | 'viewer';
+}
+
+export interface FamilyOnboardingStatus {
+  family: FamilySnapshot | null;
+  shouldShowOnboarding: boolean;
+}
+
+export interface FamilyOnboardingInvitation {
+  id: string;
+  name: string;
+  email: string;
+  status: 'pending';
+}
+
+export interface FamilyOnboardingInviteMembersResponse extends ActionResponse {
+  sentCount: number;
+  ignoredCount: number;
+  invitations: FamilyOnboardingInvitation[];
 }
 
 @Injectable()
@@ -491,7 +525,266 @@ export class AuthService {
       throw new UnauthorizedException('Sessao invalida.');
     }
 
+    await this.ensureOwnerFamilyAndMembership(user);
+
     return { user: this.toPublicUser(user) };
+  }
+
+  async getFamilyOnboardingStatus(userId: string): Promise<FamilyOnboardingStatus> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Sessao invalida.');
+    }
+
+    await this.ensureOwnerFamilyAndMembership({
+      id: user.id,
+      name: user.name,
+    });
+
+    const membership = await this.prisma.familyMember.findFirst({
+      where: {
+        userId,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+      include: {
+        family: {
+          select: {
+            id: true,
+            name: true,
+            _count: {
+              select: {
+                members: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!membership) {
+      return {
+        family: null,
+        shouldShowOnboarding: false,
+      };
+    }
+
+    const role = this.mapFamilyRole(membership.role);
+    const memberCount = membership.family._count.members;
+    const shouldShowOnboarding =
+      role === 'owner'
+      && memberCount <= 1
+      && membership.onboardingDismissedAt === null;
+
+    return {
+      family: {
+        id: membership.family.id,
+        name: membership.family.name,
+        memberCount,
+        role,
+      },
+      shouldShowOnboarding,
+    };
+  }
+
+  async inviteFamilyMembersFromOnboarding(
+    userId: string,
+    dto: FamilyOnboardingInviteMembersDto,
+  ): Promise<FamilyOnboardingInviteMembersResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Sessao invalida.');
+    }
+
+    await this.ensureOwnerFamilyAndMembership({
+      id: user.id,
+      name: user.name,
+    });
+
+    const membership = await this.prisma.familyMember.findFirst({
+      where: { userId },
+      orderBy: {
+        createdAt: 'asc',
+      },
+      select: {
+        familyId: true,
+        role: true,
+      },
+    });
+
+    if (!membership) {
+      throw new UnauthorizedException('Nao foi possivel identificar a familia da sessao.');
+    }
+
+    if (membership.role === FamilyMemberRole.VIEWER) {
+      throw new UnauthorizedException(
+        'Seu perfil atual nao possui permissao para convidar membros.',
+      );
+    }
+
+    const normalizedInvites = this.normalizeOnboardingInvites(dto.members);
+    if (!normalizedInvites.length) {
+      return {
+        success: true,
+        message: 'Nenhum convite novo foi preparado nesta tentativa.',
+        sentCount: 0,
+        ignoredCount: dto.members.length,
+        invitations: [],
+      };
+    }
+
+    const familyMembers = await this.prisma.familyMember.findMany({
+      where: { familyId: membership.familyId },
+      select: {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+    const memberEmails = new Set(
+      familyMembers.map((entry) => entry.user.email.trim().toLowerCase()),
+    );
+
+    let ignoredCount = 0;
+    const invitations: FamilyOnboardingInvitation[] = [];
+
+    for (const invite of normalizedInvites) {
+      if (invite.email === this.normalizeEmail(user.email)) {
+        ignoredCount += 1;
+        continue;
+      }
+
+      if (memberEmails.has(invite.email)) {
+        ignoredCount += 1;
+        continue;
+      }
+
+      const invitation = await this.prisma.familyInvitation.upsert({
+        where: {
+          familyId_inviteeEmail: {
+            familyId: membership.familyId,
+            inviteeEmail: invite.email,
+          },
+        },
+        create: {
+          familyId: membership.familyId,
+          inviterUserId: user.id,
+          inviteeName: invite.name,
+          inviteeEmail: invite.email,
+          status: FamilyInvitationStatus.PENDING,
+          sentAt: new Date(),
+          respondedAt: null,
+        },
+        update: {
+          inviterUserId: user.id,
+          inviteeName: invite.name,
+          status: FamilyInvitationStatus.PENDING,
+          sentAt: new Date(),
+          respondedAt: null,
+        },
+        select: {
+          id: true,
+          inviteeName: true,
+          inviteeEmail: true,
+        },
+      });
+
+      invitations.push({
+        id: invitation.id,
+        name: invitation.inviteeName,
+        email: invitation.inviteeEmail,
+        status: 'pending',
+      });
+
+      try {
+        await this.signUpMailService.sendFamilyInvitation({
+          email: invite.email,
+          name: invite.name,
+          inviterName: user.name,
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Falha ao enviar convite familiar para ${this.maskEmailForLog(invite.email)}: ${String(error)}`,
+        );
+      }
+    }
+
+    const sentCount = invitations.length;
+    const message =
+      sentCount > 0
+        ? sentCount === 1
+          ? '1 convite preparado com sucesso.'
+          : `${sentCount} convites preparados com sucesso.`
+        : 'Nenhum convite novo foi preparado nesta tentativa.';
+
+    return {
+      success: true,
+      message,
+      sentCount,
+      ignoredCount,
+      invitations,
+    };
+  }
+
+  async dismissFamilyOnboarding(userId: string): Promise<ActionResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Sessao invalida.');
+    }
+
+    await this.ensureOwnerFamilyAndMembership({
+      id: user.id,
+      name: user.name,
+    });
+
+    const membership = await this.prisma.familyMember.findFirst({
+      where: { userId },
+      orderBy: {
+        createdAt: 'asc',
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (membership) {
+      await this.prisma.familyMember.update({
+        where: { id: membership.id },
+        data: {
+          onboardingDismissedAt: new Date(),
+        },
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Onboarding de convite familiar ocultado por enquanto.',
+    };
   }
 
   private parsePositiveNumber(input: string | undefined, fallback: number) {
@@ -522,6 +815,33 @@ export class AuthService {
     return email.trim().toLowerCase();
   }
 
+  private normalizeOnboardingInvites(members: FamilyOnboardingInviteMemberDto[]) {
+    const uniqueInvites = new Map<
+      string,
+      {
+        name: string;
+        email: string;
+      }
+    >();
+
+    for (const member of members) {
+      const name = member.name.trim();
+      const email = this.normalizeEmail(member.email);
+
+      if (!name || !email) {
+        continue;
+      }
+
+      if (uniqueInvites.has(email)) {
+        continue;
+      }
+
+      uniqueInvites.set(email, { name, email });
+    }
+
+    return Array.from(uniqueInvites.values());
+  }
+
   private maskEmailForLog(email: string) {
     const [localPart = '', domainPart = ''] = email.split('@');
 
@@ -535,6 +855,79 @@ export class AuthService {
 
   private hashOpaqueToken(token: string) {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private buildDefaultFamilyName(userName: string) {
+    const firstName = userName.trim().split(/\s+/)[0] ?? 'Minha';
+    return `Familia de ${firstName}`;
+  }
+
+  private mapFamilyRole(role: FamilyMemberRole): FamilySnapshot['role'] {
+    if (role === FamilyMemberRole.ADMIN) {
+      return 'admin';
+    }
+
+    if (role === FamilyMemberRole.VIEWER) {
+      return 'viewer';
+    }
+
+    return 'owner';
+  }
+
+  private async ensureOwnerFamilyAndMembership(user: Pick<User, 'id' | 'name'>) {
+    let family = await this.prisma.family.findUnique({
+      where: { ownerUserId: user.id },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!family) {
+      try {
+        family = await this.prisma.family.create({
+          data: {
+            name: this.buildDefaultFamilyName(user.name),
+            ownerUserId: user.id,
+          },
+          select: {
+            id: true,
+          },
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError
+          && error.code === 'P2002'
+        ) {
+          family = await this.prisma.family.findUnique({
+            where: { ownerUserId: user.id },
+            select: {
+              id: true,
+            },
+          });
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    if (!family) {
+      throw new UnauthorizedException('Nao foi possivel preparar a familia da sessao.');
+    }
+
+    await this.prisma.familyMember.upsert({
+      where: {
+        familyId_userId: {
+          familyId: family.id,
+          userId: user.id,
+        },
+      },
+      create: {
+        familyId: family.id,
+        userId: user.id,
+        role: FamilyMemberRole.OWNER,
+      },
+      update: {},
+    });
   }
 
   private toPublicUser(user: User): PublicUser {
@@ -647,6 +1040,8 @@ export class AuthService {
   }
 
   private async buildAuthResponse(user: User): Promise<AuthResponse> {
+    await this.ensureOwnerFamilyAndMembership(user);
+
     const tokens = await this.issueTokenPair(user);
 
     return {

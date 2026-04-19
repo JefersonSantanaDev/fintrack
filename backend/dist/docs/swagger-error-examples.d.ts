@@ -86,6 +86,16 @@ export declare const swaggerErrorExamples: {
             readonly path: "/api/auth/forgot-password/confirm";
         };
     };
+    readonly payloadInvalidoOnboardingInvites: {
+        readonly summary: "Payload invalido (onboarding/family/invitations)";
+        readonly value: {
+            readonly statusCode: 400;
+            readonly message: readonly ["Adicione ao menos 1 membro para convidar.", "Email do membro deve ser um email valido."];
+            readonly error: "Requisicao invalida";
+            readonly timestamp: "2026-04-17T03:40:12.000Z";
+            readonly path: "/api/auth/onboarding/family/invitations";
+        };
+    };
     readonly emailEmUso: {
         readonly summary: "Email ja cadastrado";
         readonly value: {

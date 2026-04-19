@@ -14,6 +14,9 @@ model User {
   passwordHash  String         @map("password_hash")
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
+  ownedFamily   Family?        @relation("FamilyOwner")
+  familyMembers FamilyMember[]
+  familyInvitationsSent FamilyInvitation[] @relation("FamilyInvitationInviter")
   refreshTokens RefreshToken[]
   passwordResetTokens PasswordResetToken[]
 
@@ -76,4 +79,66 @@ model LoginAttempt {
 
   @@index([lockedUntil])
   @@map("login_attempts")
+}
+
+enum FamilyMemberRole {
+  OWNER
+  ADMIN
+  VIEWER
+}
+
+enum FamilyInvitationStatus {
+  PENDING
+  ACCEPTED
+  CANCELED
+}
+
+model Family {
+  id          String         @id @default(uuid()) @db.Uuid
+  name        String
+  ownerUserId String         @unique @db.Uuid @map("owner_user_id")
+  owner       User           @relation("FamilyOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  members     FamilyMember[]
+  invitations FamilyInvitation[]
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@map("families")
+}
+
+model FamilyMember {
+  id                   String           @id @default(uuid()) @db.Uuid
+  familyId             String           @db.Uuid @map("family_id")
+  userId               String           @db.Uuid @map("user_id")
+  role                 FamilyMemberRole @default(OWNER)
+  onboardingDismissedAt DateTime?       @map("onboarding_dismissed_at")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+  family               Family           @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, userId])
+  @@index([familyId])
+  @@index([userId])
+  @@map("family_members")
+}
+
+model FamilyInvitation {
+  id            String                 @id @default(uuid()) @db.Uuid
+  familyId      String                 @db.Uuid @map("family_id")
+  inviterUserId String                 @db.Uuid @map("inviter_user_id")
+  inviteeName   String                 @map("invitee_name")
+  inviteeEmail  String                 @map("invitee_email")
+  status        FamilyInvitationStatus @default(PENDING)
+  sentAt        DateTime               @default(now()) @map("sent_at")
+  respondedAt   DateTime?              @map("responded_at")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+  family        Family                 @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  inviter       User                   @relation("FamilyInvitationInviter", fields: [inviterUserId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, inviteeEmail])
+  @@index([familyId, status])
+  @@index([inviterUserId])
+  @@map("family_invitations")
 }

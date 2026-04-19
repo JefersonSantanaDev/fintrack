@@ -80,6 +80,19 @@ exports.swaggerErrorExamples = {
             path: '/api/auth/forgot-password/confirm',
         },
     },
+    payloadInvalidoOnboardingInvites: {
+        summary: 'Payload invalido (onboarding/family/invitations)',
+        value: {
+            statusCode: 400,
+            message: [
+                'Adicione ao menos 1 membro para convidar.',
+                'Email do membro deve ser um email valido.',
+            ],
+            error: 'Requisicao invalida',
+            timestamp: '2026-04-17T03:40:12.000Z',
+            path: '/api/auth/onboarding/family/invitations',
+        },
+    },
     emailEmUso: {
         summary: 'Email ja cadastrado',
         value: {

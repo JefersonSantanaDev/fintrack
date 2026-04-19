@@ -18,6 +18,29 @@ export declare class ActionResponseDto {
     success: boolean;
     message: string;
 }
+export declare class FamilySnapshotDto {
+    id: string;
+    name: string;
+    memberCount: number;
+    role: 'owner' | 'admin' | 'viewer';
+}
+export declare class FamilyOnboardingStatusDto {
+    family: FamilySnapshotDto | null;
+    shouldShowOnboarding: boolean;
+}
+export declare class FamilyOnboardingInvitationDto {
+    id: string;
+    name: string;
+    email: string;
+    status: 'pending';
+}
+export declare class FamilyOnboardingInviteMembersResponseDto {
+    success: boolean;
+    message: string;
+    sentCount: number;
+    ignoredCount: number;
+    invitations: FamilyOnboardingInvitationDto[];
+}
 export declare class MeResponseDto {
     user: PublicUserDto;
 }

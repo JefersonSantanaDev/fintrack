@@ -30,6 +30,8 @@ import {
   ApiErrorResponseDto,
   ApiValidationErrorResponseDto,
   AuthResponseDto,
+  FamilyOnboardingInviteMembersResponseDto,
+  FamilyOnboardingStatusDto,
   LogoutResponseDto,
   MeResponseDto,
   SignUpChallengeResponseDto,
@@ -40,6 +42,7 @@ import { ForgotPasswordRequestDto } from './dto/forgot-password-request.dto';
 import { SignUpResendDto } from './dto/signup-resend.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { SignUpVerifyDto } from './dto/signup-verify.dto';
+import { FamilyOnboardingInviteMembersDto } from './dto/family-onboarding-invite.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
 import type { AuthenticatedUser } from './types/auth-user.type';
@@ -60,6 +63,8 @@ const fiveMinutesMs = 5 * 60_000;
   ApiValidationErrorResponseDto,
   SignUpChallengeResponseDto,
   ActionResponseDto,
+  FamilyOnboardingStatusDto,
+  FamilyOnboardingInviteMembersResponseDto,
 )
 @Controller('auth')
 export class AuthController {
@@ -472,5 +477,102 @@ export class AuthController {
   @Throttle({ default: { limit: 60, ttl: oneMinuteMs, blockDuration: oneMinuteMs } })
   me(@CurrentUser() user: AuthenticatedUser): Promise<MeResponseDto> {
     return this.authService.getProfile(user.userId);
+  }
+
+  @Get('onboarding/family')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Status de onboarding familiar',
+    description:
+      'Retorna estado atual do onboarding de convite de membros da familia no dashboard.',
+  })
+  @ApiOkResponse({
+    description: 'Status do onboarding familiar carregado com sucesso.',
+    type: FamilyOnboardingStatusDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Access token invalido ou ausente.',
+    content: apiErrorContent({
+      accessTokenInvalido: swaggerErrorExamples.accessTokenInvalido,
+    }),
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
+    content: apiErrorContent({ rateLimitRota: swaggerErrorExamples.rateLimitRota }),
+  })
+  @Throttle({ default: { limit: 60, ttl: oneMinuteMs, blockDuration: oneMinuteMs } })
+  familyOnboardingStatus(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<FamilyOnboardingStatusDto> {
+    return this.authService.getFamilyOnboardingStatus(user.userId);
+  }
+
+  @Post('onboarding/family/dismiss')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Ocultar onboarding familiar',
+    description:
+      'Marca o onboarding de convite familiar como ocultado para o usuario atual.',
+  })
+  @ApiOkResponse({
+    description: 'Onboarding ocultado com sucesso.',
+    type: ActionResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Access token invalido ou ausente.',
+    content: apiErrorContent({
+      accessTokenInvalido: swaggerErrorExamples.accessTokenInvalido,
+    }),
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
+    content: apiErrorContent({ rateLimitRota: swaggerErrorExamples.rateLimitRota }),
+  })
+  @Throttle({ default: { limit: 30, ttl: oneMinuteMs, blockDuration: oneMinuteMs } })
+  dismissFamilyOnboarding(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ActionResponseDto> {
+    return this.authService.dismissFamilyOnboarding(user.userId);
+  }
+
+  @Post('onboarding/family/invitations')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Convidar membros no onboarding familiar',
+    description:
+      'Recebe lista de membros (nome + email), prepara convites e envia emails no fluxo inicial do onboarding.',
+  })
+  @ApiOkResponse({
+    description: 'Convites processados com sucesso.',
+    type: FamilyOnboardingInviteMembersResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Payload invalido.',
+    content: apiValidationErrorContent({
+      payloadInvalidoOnboardingInvites:
+        swaggerErrorExamples.payloadInvalidoOnboardingInvites,
+    }),
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Access token invalido ou ausente.',
+    content: apiErrorContent({
+      accessTokenInvalido: swaggerErrorExamples.accessTokenInvalido,
+    }),
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Muitas tentativas nessa rota. Aguarde e tente novamente.',
+    content: apiErrorContent({ rateLimitRota: swaggerErrorExamples.rateLimitRota }),
+  })
+  @Throttle({ default: { limit: 12, ttl: oneMinuteMs, blockDuration: oneMinuteMs } })
+  inviteFamilyMembersFromOnboarding(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: FamilyOnboardingInviteMembersDto,
+  ): Promise<FamilyOnboardingInviteMembersResponseDto> {
+    return this.authService.inviteFamilyMembersFromOnboarding(user.userId, dto);
   }
 }

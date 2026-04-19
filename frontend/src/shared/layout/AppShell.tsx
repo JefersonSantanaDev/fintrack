@@ -16,6 +16,7 @@ import {
 import { appPaths } from '@/app/paths'
 import { useAuth } from '@/features/auth'
 import { FinTrackLogo } from '@/shared/branding/FinTrackLogo'
+import { FamilyOnboardingGate } from '@/shared/layout/FamilyOnboardingGate'
 import { AppShellLoading } from '@/shared/layout/AppShellLoading'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
@@ -280,6 +281,8 @@ export function AppShell() {
           </main>
         </div>
       </div>
+
+      <FamilyOnboardingGate enabled={!isPostLoginLoading} />
     </div>
   )
 }

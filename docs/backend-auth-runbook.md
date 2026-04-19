@@ -236,9 +236,12 @@ Fluxo esperado:
 - `Criar cadastro` chama `POST /auth/signup/start`
 - `Confirmar codigo` chama `POST /auth/signup/verify`
 - `Entrar` chama `POST /auth/login`
+- na primeira sessao valida, familia owner e membership owner sao provisionados automaticamente
 - sessao valida chama `GET /auth/me`
 - expiracao de access token usa `POST /auth/refresh` automaticamente
 - `Sair` chama `POST /auth/logout`
+- ao primeiro login, frontend abre modal bloqueante de onboarding familiar via `GET /auth/onboarding/family`
+- `Convidar agora` ou `Continuar sozinho` concluem onboarding chamando `POST /auth/onboarding/family/dismiss`
 
 ## 6) Validacoes recomendadas
 
