@@ -133,7 +133,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthOnboardingController.prototype, "inviteFamilyMembersFromOnboarding", null);
 exports.AuthOnboardingController = AuthOnboardingController = __decorate([
-    (0, swagger_1.ApiTags)('Auth - Onboarding Familiar'),
+    (0, swagger_1.ApiTags)('Auth - Family Onboarding'),
     (0, swagger_1.ApiExtraModels)(auth_response_dto_1.ApiErrorResponseDto, auth_response_dto_1.ApiValidationErrorResponseDto, auth_response_dto_1.ActionResponseDto, auth_response_dto_1.FamilyOnboardingStatusDto, auth_response_dto_1.FamilyOnboardingInviteMembersResponseDto),
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

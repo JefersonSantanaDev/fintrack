@@ -27,6 +27,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     SignUpMailService,
     JwtStrategy,
   ],
-  exports: [AuthService],
+  exports: [AuthService, SignUpMailService],
 })
 export class AuthModule {}

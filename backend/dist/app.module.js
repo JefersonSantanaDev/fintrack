@@ -12,6 +12,7 @@ const config_1 = require("@nestjs/config");
 const core_1 = require("@nestjs/core");
 const throttler_1 = require("@nestjs/throttler");
 const auth_module_1 = require("./auth/auth.module");
+const family_module_1 = require("./family/family.module");
 const prisma_module_1 = require("./prisma/prisma.module");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
@@ -38,6 +39,7 @@ exports.AppModule = AppModule = __decorate([
             }),
             prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
+            family_module_1.FamilyModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

@@ -96,6 +96,26 @@ export declare const swaggerErrorExamples: {
             readonly path: "/api/auth/onboarding/family/invitations";
         };
     };
+    readonly payloadInvalidoFamilyInvites: {
+        readonly summary: "Payload invalido (family/invitations)";
+        readonly value: {
+            readonly statusCode: 400;
+            readonly message: readonly ["Adicione ao menos 1 membro para convidar.", "Email do membro deve ser um email valido."];
+            readonly error: "Requisicao invalida";
+            readonly timestamp: "2026-04-17T03:40:12.000Z";
+            readonly path: "/api/family/invitations";
+        };
+    };
+    readonly payloadInvalidoFamilyRole: {
+        readonly summary: "Payload invalido (family/members/:id/role)";
+        readonly value: {
+            readonly statusCode: 400;
+            readonly message: readonly ["Papel deve ser admin ou viewer."];
+            readonly error: "Requisicao invalida";
+            readonly timestamp: "2026-04-17T03:40:12.000Z";
+            readonly path: "/api/family/members/4c66fc27-37f6-4fdd-b9de-36db78350d7f/role";
+        };
+    };
     readonly emailEmUso: {
         readonly summary: "Email ja cadastrado";
         readonly value: {
@@ -174,6 +194,36 @@ export declare const swaggerErrorExamples: {
             readonly error: "Nao autorizado";
             readonly timestamp: "2026-04-17T03:40:12.000Z";
             readonly path: "/api/auth/me";
+        };
+    };
+    readonly semPermissaoFamilia: {
+        readonly summary: "Perfil sem permissao para esta operacao";
+        readonly value: {
+            readonly statusCode: 403;
+            readonly message: "Apenas owners podem gerenciar membros da familia.";
+            readonly error: "Proibido";
+            readonly timestamp: "2026-04-17T03:40:12.000Z";
+            readonly path: "/api/family/members/4c66fc27-37f6-4fdd-b9de-36db78350d7f/role";
+        };
+    };
+    readonly conviteNaoEncontrado: {
+        readonly summary: "Convite pendente nao encontrado";
+        readonly value: {
+            readonly statusCode: 404;
+            readonly message: "Convite pendente nao encontrado.";
+            readonly error: "Nao encontrado";
+            readonly timestamp: "2026-04-17T03:40:12.000Z";
+            readonly path: "/api/family/invitations/1f2f0931-942c-49a7-9f5b-5f946610f16f/resend";
+        };
+    };
+    readonly membroNaoEncontrado: {
+        readonly summary: "Membro nao encontrado na familia";
+        readonly value: {
+            readonly statusCode: 404;
+            readonly message: "Membro da familia nao encontrado.";
+            readonly error: "Nao encontrado";
+            readonly timestamp: "2026-04-17T03:40:12.000Z";
+            readonly path: "/api/family/members/4c66fc27-37f6-4fdd-b9de-36db78350d7f";
         };
     };
     readonly rateLimitAuth: {

@@ -110,6 +110,23 @@ async function executeRequest(
   })
 }
 
+async function executeRequestSafe(
+  path: string,
+  options: ApiRequestOptions,
+  accessToken: string | null,
+  fallbackErrorMessage: string,
+) {
+  try {
+    return await executeRequest(path, options, accessToken)
+  } catch (error) {
+    throw new ApiRequestError(
+      fallbackErrorMessage,
+      undefined,
+      error instanceof Error ? { message: error.message } : error,
+    )
+  }
+}
+
 export async function apiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
@@ -123,13 +140,13 @@ export async function apiRequest<T>(
 
   const initialAccessToken = auth ? apiAuthConfig?.getAccessToken() ?? null : null
 
-  let response = await executeRequest(path, requestInit, initialAccessToken)
+  let response = await executeRequestSafe(path, requestInit, initialAccessToken, errorMessage)
 
   if (auth && retryOnUnauthorized && response.status === 401) {
     const refreshedAccessToken = await refreshAccessTokenWithLock()
 
     if (refreshedAccessToken) {
-      response = await executeRequest(path, requestInit, refreshedAccessToken)
+      response = await executeRequestSafe(path, requestInit, refreshedAccessToken, errorMessage)
     }
   }
 

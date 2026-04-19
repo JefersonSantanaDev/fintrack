@@ -70,6 +70,8 @@ async function bootstrap() {
   app.enableCors({
     origin: frontendUrl ? frontendUrl.split(',').map((item) => item.trim()) : true,
     credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   const docsEnabled = process.env.API_DOCS_ENABLED !== 'false';

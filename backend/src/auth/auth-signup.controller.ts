@@ -32,7 +32,7 @@ import {
 const oneMinuteMs = 60_000;
 const fiveMinutesMs = 5 * 60_000;
 
-@ApiTags('Auth - Cadastro')
+@ApiTags('Auth - Sign Up')
 @ApiExtraModels(
   ApiErrorResponseDto,
   ApiValidationErrorResponseDto,

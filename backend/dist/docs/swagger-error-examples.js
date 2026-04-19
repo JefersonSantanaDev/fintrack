@@ -93,6 +93,29 @@ exports.swaggerErrorExamples = {
             path: '/api/auth/onboarding/family/invitations',
         },
     },
+    payloadInvalidoFamilyInvites: {
+        summary: 'Payload invalido (family/invitations)',
+        value: {
+            statusCode: 400,
+            message: [
+                'Adicione ao menos 1 membro para convidar.',
+                'Email do membro deve ser um email valido.',
+            ],
+            error: 'Requisicao invalida',
+            timestamp: '2026-04-17T03:40:12.000Z',
+            path: '/api/family/invitations',
+        },
+    },
+    payloadInvalidoFamilyRole: {
+        summary: 'Payload invalido (family/members/:id/role)',
+        value: {
+            statusCode: 400,
+            message: ['Papel deve ser admin ou viewer.'],
+            error: 'Requisicao invalida',
+            timestamp: '2026-04-17T03:40:12.000Z',
+            path: '/api/family/members/4c66fc27-37f6-4fdd-b9de-36db78350d7f/role',
+        },
+    },
     emailEmUso: {
         summary: 'Email ja cadastrado',
         value: {
@@ -171,6 +194,36 @@ exports.swaggerErrorExamples = {
             error: 'Nao autorizado',
             timestamp: '2026-04-17T03:40:12.000Z',
             path: '/api/auth/me',
+        },
+    },
+    semPermissaoFamilia: {
+        summary: 'Perfil sem permissao para esta operacao',
+        value: {
+            statusCode: 403,
+            message: 'Apenas owners podem gerenciar membros da familia.',
+            error: 'Proibido',
+            timestamp: '2026-04-17T03:40:12.000Z',
+            path: '/api/family/members/4c66fc27-37f6-4fdd-b9de-36db78350d7f/role',
+        },
+    },
+    conviteNaoEncontrado: {
+        summary: 'Convite pendente nao encontrado',
+        value: {
+            statusCode: 404,
+            message: 'Convite pendente nao encontrado.',
+            error: 'Nao encontrado',
+            timestamp: '2026-04-17T03:40:12.000Z',
+            path: '/api/family/invitations/1f2f0931-942c-49a7-9f5b-5f946610f16f/resend',
+        },
+    },
+    membroNaoEncontrado: {
+        summary: 'Membro nao encontrado na familia',
+        value: {
+            statusCode: 404,
+            message: 'Membro da familia nao encontrado.',
+            error: 'Nao encontrado',
+            timestamp: '2026-04-17T03:40:12.000Z',
+            path: '/api/family/members/4c66fc27-37f6-4fdd-b9de-36db78350d7f',
         },
     },
     rateLimitAuth: {

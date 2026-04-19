@@ -154,7 +154,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthSignupController.prototype, "signUpResend", null);
 exports.AuthSignupController = AuthSignupController = __decorate([
-    (0, swagger_1.ApiTags)('Auth - Cadastro'),
+    (0, swagger_1.ApiTags)('Auth - Sign Up'),
     (0, swagger_1.ApiExtraModels)(auth_response_dto_1.ApiErrorResponseDto, auth_response_dto_1.ApiValidationErrorResponseDto, auth_response_dto_1.SignUpChallengeResponseDto),
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService,

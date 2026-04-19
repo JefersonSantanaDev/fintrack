@@ -26,7 +26,7 @@ import {
 const oneMinuteMs = 60_000;
 const fiveMinutesMs = 5 * 60_000;
 
-@ApiTags('Auth - Recuperacao')
+@ApiTags('Auth - Password Recovery')
 @ApiExtraModels(ApiErrorResponseDto, ApiValidationErrorResponseDto, ActionResponseDto)
 @Controller('auth')
 export class AuthPasswordController {

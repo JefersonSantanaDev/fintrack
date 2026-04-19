@@ -39,7 +39,7 @@ exports.AuthModule = AuthModule = __decorate([
             signup_mail_service_1.SignUpMailService,
             jwt_strategy_1.JwtStrategy,
         ],
-        exports: [auth_service_1.AuthService],
+        exports: [auth_service_1.AuthService, signup_mail_service_1.SignUpMailService],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

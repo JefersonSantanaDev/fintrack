@@ -101,7 +101,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthPasswordController.prototype, "confirmPasswordRecovery", null);
 exports.AuthPasswordController = AuthPasswordController = __decorate([
-    (0, swagger_1.ApiTags)('Auth - Recuperacao'),
+    (0, swagger_1.ApiTags)('Auth - Password Recovery'),
     (0, swagger_1.ApiExtraModels)(auth_response_dto_1.ApiErrorResponseDto, auth_response_dto_1.ApiValidationErrorResponseDto, auth_response_dto_1.ActionResponseDto),
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

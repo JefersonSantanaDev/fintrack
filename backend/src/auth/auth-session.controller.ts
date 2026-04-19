@@ -43,7 +43,7 @@ import {
 const oneMinuteMs = 60_000;
 const fiveMinutesMs = 5 * 60_000;
 
-@ApiTags('Auth - Sessao')
+@ApiTags('Auth - Session')
 @ApiExtraModels(
   ApiErrorResponseDto,
   ApiValidationErrorResponseDto,

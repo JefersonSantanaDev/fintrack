@@ -161,7 +161,7 @@ export function AppShell() {
 
   const meta = pageMeta(location.pathname)
   const familyMembers = user?.family?.members ?? []
-  const visibleFamilyMembers = familyMembers.slice(0, 4)
+  const visibleFamilyMembers = familyMembers.slice(0, 3)
   const hiddenMembersCount = Math.max(0, familyMembers.length - visibleFamilyMembers.length)
 
   const handleLogout = async () => {
@@ -177,11 +177,10 @@ export function AppShell() {
 
       <div className="mx-auto flex min-h-screen max-w-[2200px] flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <header className="rounded-lg border border-border bg-card p-3 shadow-[var(--shadow-level-1)] sm:p-4">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 <FinTrackLogo />
-                <Badge variant="secondary">MVP familiar</Badge>
                 <Badge variant="outline" className="capitalize">
                   {currentMonth}
                 </Badge>
@@ -197,79 +196,9 @@ export function AppShell() {
                   {meta.description}
                 </p>
               </div>
-
-              {user?.family ? (
-                <div className="rounded-sm border border-border bg-background/70 p-3 sm:p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                      Familia conectada
-                    </p>
-                    <Badge variant="outline">
-                      {user.family.memberCount}{' '}
-                      {user.family.memberCount === 1 ? 'membro' : 'membros'}
-                    </Badge>
-                  </div>
-
-                  {visibleFamilyMembers.length > 0 ? (
-                    <div className="mt-3 grid gap-2 md:grid-cols-2">
-                      {visibleFamilyMembers.map(member => {
-                        const RoleIcon = familyRoleIcon[member.role]
-
-                        return (
-                          <div
-                            key={member.id}
-                            className="rounded-sm border border-border bg-card/70 p-3"
-                          >
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-                              <div className="flex min-w-0 items-center gap-3">
-                                <span className="flex size-8 shrink-0 items-center justify-center rounded-sm border border-primary/35 bg-primary/10 text-xs font-bold text-primary">
-                                  {memberInitials(member.name)}
-                                </span>
-                                <div className="min-w-0">
-                                  <p className="break-words text-sm font-semibold leading-tight text-foreground">
-                                    {member.name}
-                                    {member.isCurrentUser ? ' (voce)' : ''}
-                                  </p>
-                                  <p className="break-all text-xs text-muted-foreground sm:truncate">
-                                    {member.email}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <Badge
-                                variant={familyRoleBadgeVariant[member.role]}
-                                className="w-fit shrink-0 self-start"
-                              >
-                                <RoleIcon className="size-3" />
-                                {familyRoleLabel[member.role]}
-                              </Badge>
-                            </div>
-                          </div>
-                        )
-                      })}
-
-                      {hiddenMembersCount > 0 ? (
-                        <div className="rounded-sm border border-dashed border-border bg-background/40 p-3">
-                          <p className="text-sm font-medium text-foreground">
-                            +{hiddenMembersCount}{' '}
-                            {hiddenMembersCount === 1 ? 'membro adicional' : 'membros adicionais'}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Veja todos na aba Familia.
-                          </p>
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      Nenhum membro encontrado ainda para esta familia.
-                    </p>
-                  )}
-                </div>
-              ) : null}
             </div>
 
-            <div className="grid w-full gap-2 sm:flex sm:w-auto sm:items-center lg:self-start">
+            <div className="grid w-full gap-2 sm:flex sm:w-auto sm:items-center lg:justify-self-end">
               <Badge variant="outline" className="max-w-full justify-start sm:max-w-[320px]">
                 <span className="truncate">{user?.name ?? 'Conta'}</span>
               </Badge>
@@ -308,6 +237,76 @@ export function AppShell() {
                 </Button>
               </div>
             </div>
+
+            {user?.family ? (
+              <div className="rounded-sm border border-border bg-background/70 p-3 sm:p-4 lg:col-span-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Familia conectada
+                  </p>
+                  <Badge variant="outline">
+                    {user.family.memberCount}{' '}
+                    {user.family.memberCount === 1 ? 'membro' : 'membros'}
+                  </Badge>
+                </div>
+
+                {visibleFamilyMembers.length > 0 ? (
+                  <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                    {visibleFamilyMembers.map(member => {
+                      const RoleIcon = familyRoleIcon[member.role]
+
+                      return (
+                        <div
+                          key={member.id}
+                          className="rounded-sm border border-border bg-card/70 p-3"
+                        >
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <span className="flex size-8 shrink-0 items-center justify-center rounded-sm border border-primary/35 bg-primary/10 text-xs font-bold text-primary">
+                                {memberInitials(member.name)}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="break-words text-sm font-semibold leading-tight text-foreground">
+                                  {member.name}
+                                  {member.isCurrentUser ? ' (voce)' : ''}
+                                </p>
+                                <p className="break-all text-xs text-muted-foreground sm:truncate">
+                                  {member.email}
+                                </p>
+                              </div>
+                            </div>
+
+                            <Badge
+                              variant={familyRoleBadgeVariant[member.role]}
+                              className="w-fit shrink-0 self-start"
+                            >
+                              <RoleIcon className="size-3" />
+                              {familyRoleLabel[member.role]}
+                            </Badge>
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    {hiddenMembersCount > 0 ? (
+                      <div className="rounded-sm border border-dashed border-border bg-background/40 p-3 lg:col-span-3">
+                        <p className="text-sm font-medium text-foreground">
+                          +{hiddenMembersCount}{' '}
+                          {hiddenMembersCount === 1 ? 'membro adicional' : 'membros adicionais'}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Veja todos na aba Familia.
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Nenhum membro encontrado ainda para esta familia.
+                  </p>
+                )}
+              </div>
+            ) : null}
           </div>
         </header>
 

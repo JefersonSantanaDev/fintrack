@@ -14,7 +14,6 @@ import {
 import { appPaths } from '@/app/paths'
 import { useFamilyOnboarding } from '@/features/dashboard/hooks/use-family-onboarding'
 import { FinTrackLogo } from '@/shared/branding/FinTrackLogo'
-import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import {
   Dialog,
@@ -227,7 +226,6 @@ export function FamilyOnboardingGate({ enabled }: FamilyOnboardingGateProps) {
                     </p>
                   </div>
                 </div>
-                <Badge variant="success">MVP familiar</Badge>
               </div>
               <DialogTitle className="max-w-3xl text-2xl leading-tight sm:text-3xl">
                 Como voce quer iniciar sua familia financeira?

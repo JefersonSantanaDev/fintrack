@@ -38,7 +38,7 @@ import {
 
 const oneMinuteMs = 60_000;
 
-@ApiTags('Auth - Onboarding Familiar')
+@ApiTags('Auth - Family Onboarding')
 @ApiExtraModels(
   ApiErrorResponseDto,
   ApiValidationErrorResponseDto,
