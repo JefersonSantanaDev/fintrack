@@ -162,12 +162,14 @@ export class SignUpMailService {
       return;
     }
 
+    const signUpUrl = this.buildSignUpInvitationUrl(email);
+
     const message: Mail.Options = {
       from: this.from,
       to: email,
       subject: 'FinTrack - Convite para sua familia financeira',
-      text: this.buildFamilyInvitationText(name, inviterName),
-      html: this.buildFamilyInvitationHtml(name, inviterName),
+      text: this.buildFamilyInvitationText(name, inviterName, signUpUrl),
+      html: this.buildFamilyInvitationHtml(name, inviterName, signUpUrl),
     };
 
     try {
@@ -446,23 +448,31 @@ export class SignUpMailService {
 </html>`;
   }
 
-  private buildFamilyInvitationText(name: string, inviterName: string) {
+  private buildFamilyInvitationText(
+    name: string,
+    inviterName: string,
+    signUpUrl: string,
+  ) {
     return [
       `Ola, ${name}.`,
       '',
       `${inviterName} convidou voce para participar da familia no FinTrack.`,
-      'Ao criar sua conta com este email, voce podera colaborar no painel financeiro.',
+      'Ao criar sua conta com este email, voce podera colaborar no painel financeiro da familia.',
       '',
-      `Acesse: ${this.frontendUrl}`,
+      `Criar conta: ${signUpUrl}`,
       '',
       'Se voce nao reconhece este convite, ignore este email.',
     ].join('\n');
   }
 
-  private buildFamilyInvitationHtml(name: string, inviterName: string) {
+  private buildFamilyInvitationHtml(
+    name: string,
+    inviterName: string,
+    signUpUrl: string,
+  ) {
     const safeName = this.escapeHtml(name);
     const safeInviterName = this.escapeHtml(inviterName);
-    const safeFrontendUrl = this.escapeHtml(this.frontendUrl);
+    const safeSignUpUrl = this.escapeHtml(signUpUrl);
 
     return `<!doctype html>
 <html lang="pt-BR">
@@ -473,6 +483,9 @@ export class SignUpMailService {
     <title>FinTrack - Convite familiar</title>
   </head>
   <body style="margin:0;padding:0;background:#000000;color:#ffffff;font-family:Inter,Arial,Helvetica,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+      ${safeInviterName} convidou voce para participar da familia no FinTrack.
+    </div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#000000;padding:32px 16px;">
       <tr>
         <td align="center">
@@ -496,7 +509,7 @@ export class SignUpMailService {
             <tr>
               <td style="padding:0 28px 6px 28px;">
                 <h1 style="margin:0;font-size:34px;line-height:1.08;font-weight:900;color:#ffffff;">
-                  Voce recebeu um convite familiar
+                  Convite para entrar na familia FinTrack
                 </h1>
               </td>
             </tr>
@@ -505,15 +518,31 @@ export class SignUpMailService {
                 <p style="margin:0 0 16px 0;font-size:16px;line-height:1.55;color:#a0a0a0;">
                   Ola, ${safeName}. ${safeInviterName} convidou voce para participar da familia financeira no FinTrack.
                 </p>
-                <p style="margin:0 0 16px 0;font-size:14px;line-height:1.55;color:#a0a0a0;">
-                  Crie sua conta com este email para entrar na colaboracao familiar.
+                <p style="margin:0 0 10px 0;font-size:14px;line-height:1.55;color:#a0a0a0;">
+                  Para aceitar o convite, crie sua conta com este mesmo email.
                 </p>
               </td>
             </tr>
             <tr>
+              <td style="padding:0 28px 16px 28px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#141414;border:1px solid #faff69;border-radius:8px;">
+                  <tr>
+                    <td style="padding:14px 16px;">
+                      <p style="margin:0 0 8px 0;font-size:12px;line-height:1.4;font-weight:600;letter-spacing:1.3px;text-transform:uppercase;color:#f4f692;">
+                        Proximo passo
+                      </p>
+                      <p style="margin:0;font-size:14px;line-height:1.55;color:#e8e8e8;">
+                        Clique no botao abaixo e finalize o cadastro para entrar no ambiente familiar.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
               <td style="padding:0 28px 22px 28px;">
-                <a href="${safeFrontendUrl}" style="display:inline-block;padding:12px 18px;border-radius:4px;border:1px solid #faff69;background:#faff69;color:#151515;font-size:15px;font-weight:700;text-decoration:none;">
-                  Abrir FinTrack
+                <a href="${safeSignUpUrl}" style="display:inline-block;padding:12px 18px;border-radius:4px;border:1px solid #faff69;background:#faff69;color:#151515;font-size:15px;font-weight:700;text-decoration:none;">
+                  Criar conta e entrar na familia
                 </a>
               </td>
             </tr>
@@ -531,6 +560,15 @@ export class SignUpMailService {
                     </td>
                   </tr>
                 </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 26px 28px;">
+                <p style="margin:0;font-size:12px;line-height:1.55;color:#7e7e7e;">
+                  Se o botao nao abrir, copie e cole este link no navegador:
+                  <br />
+                  <span style="word-break:break-all;color:#a9a9a9;">${safeSignUpUrl}</span>
+                </p>
               </td>
             </tr>
           </table>
@@ -551,6 +589,20 @@ export class SignUpMailService {
       : url.pathname;
     url.pathname = `${normalizedPath}/reset-password`;
     url.searchParams.set('token', token);
+    return url.toString();
+  }
+
+  private buildSignUpInvitationUrl(email: string) {
+    const baseUrl = this.frontendUrl.endsWith('/')
+      ? this.frontendUrl.slice(0, -1)
+      : this.frontendUrl;
+    const url = new URL(baseUrl);
+    const normalizedPath = url.pathname.endsWith('/')
+      ? url.pathname.slice(0, -1)
+      : url.pathname;
+    url.pathname = `${normalizedPath}/signup`;
+    url.searchParams.set('email', email);
+    url.searchParams.set('source', 'family-invite');
     return url.toString();
   }
 

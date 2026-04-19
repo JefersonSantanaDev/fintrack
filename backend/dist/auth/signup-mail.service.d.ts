@@ -36,6 +36,7 @@ export declare class SignUpMailService {
     private buildFamilyInvitationText;
     private buildFamilyInvitationHtml;
     private buildResetPasswordUrl;
+    private buildSignUpInvitationUrl;
     private buildLogoMarkSvg;
     private escapeHtml;
 }

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   ArrowRight,
@@ -69,6 +69,7 @@ function formatCountdown(seconds: number) {
 
 export function SignUpPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { startSignUp, verifySignUp, resendSignUpCode, isSubmitting } = useAuth()
 
   const [step, setStep] = useState<SignUpStep>('start')
@@ -90,6 +91,17 @@ export function SignUpPage() {
     verificationCode: false,
   })
   const otpInputRefs = useRef<Array<HTMLInputElement | null>>([])
+
+  const invitedEmail = useMemo(() => {
+    const source = searchParams.get('source')
+    const emailFromInvite = searchParams.get('email')?.trim().toLowerCase() ?? ''
+
+    if (source !== 'family-invite') {
+      return ''
+    }
+
+    return /^\S+@\S+\.\S+$/.test(emailFromInvite) ? emailFromInvite : ''
+  }, [searchParams])
 
   const verificationCode = verificationDigits.join('')
 
@@ -263,6 +275,15 @@ export function SignUpPage() {
       focusOtpInput(0)
     })
   }, [step])
+
+  useEffect(() => {
+    if (!invitedEmail || step !== 'start') {
+      return
+    }
+
+    setEmail(current => current || invitedEmail)
+    setTouched(current => ({ ...current, email: false }))
+  }, [invitedEmail, step])
 
   const handleStartSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
